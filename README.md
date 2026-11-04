@@ -32,6 +32,26 @@ Phone (public/)  ──►  /api/recipe (functions/api/recipe.js)  ──►  Ge
 4. After the first deploy: Settings → Variables and Secrets → add `GEMINI_API_KEY` as a **secret**.
 5. Redeploy once so the secret is picked up. Your link looks like `https://<project>.pages.dev`.
 
+## Project layout
+
+```
+functions/
+  api/recipe.js            backend endpoint for recipes (one file per endpoint)
+  shared/                  helpers every endpoint uses (Gemini call, JSON replies)
+public/
+  index.html, style.css    the page and its look
+  sw.js, manifest, icons   make it installable
+  js/
+    main.js                starts the app, connects the features
+    api.js, ui.js, prefs.js  shared helpers
+    data/regions.js        states, regions and diets (used by browser AND server)
+    features/onboarding.js first-visit questions
+    features/recipe.js     recipe form and result
+```
+
+Adding a feature = one new file in `public/js/features/` (plus one in `functions/api/` if it needs the server).
+Every new frontend file must also be added to the list in `public/sw.js`, with the cache number bumped.
+
 ## Not done yet (next steps)
 
 - Invite code and per-user message limit (protects your free quota once you share the link).

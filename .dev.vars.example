@@ -1,4 +1,3 @@
 # Copy this file to ".dev.vars" (same folder) and paste your real key.
 # .dev.vars is only used on your own computer and is ignored by git.
-
-GOOGLE_API_KEY=your_google_api_key_here
+GEMINI_API_KEY=paste-your-key-here

@@ -1,8 +1,22 @@
 // Service worker: lets the app install and open quickly.
 // It only caches the app's own screens. It never touches /api, so recipes are always fresh.
+//
+// WHEN YOU ADD A NEW FRONTEND FILE: add it to SHELL below and bump the CACHE number.
 
-const CACHE = "whats-cooking-v1";
-const SHELL = ["/", "/style.css", "/app.js", "/manifest.webmanifest", "/icon-192.png"];
+const CACHE = "whats-cooking-v2";
+const SHELL = [
+  "/",
+  "/style.css",
+  "/manifest.webmanifest",
+  "/icon-192.png",
+  "/js/main.js",
+  "/js/api.js",
+  "/js/ui.js",
+  "/js/prefs.js",
+  "/js/data/regions.js",
+  "/js/features/onboarding.js",
+  "/js/features/recipe.js",
+];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(SHELL)));
