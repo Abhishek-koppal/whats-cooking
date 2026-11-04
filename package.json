@@ -1,0 +1,12 @@
+{
+  "name": "whats-cooking",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler pages dev public",
+    "deploy": "wrangler pages deploy public --project-name whats-cooking"
+  },
+  "devDependencies": {
+    "wrangler": "^4"
+  }
+}
