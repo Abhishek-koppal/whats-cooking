@@ -1,0 +1,4 @@
+# Only needed on your own computer (not on Vercel):  pip install -r requirements-dev.txt
+-r requirements.txt
+uvicorn>=0.30
+pytest>=8

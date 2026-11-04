@@ -2,16 +2,14 @@
 // Each feature lives in js/features/ and is connected here.
 
 import { loadPrefs, savePrefs } from "./prefs.js";
-import { describeRegion, DIETS } from "./data/regions.js";
+import { loadRegions, describeRegion, DIETS } from "./data/regions.js";
 import { startOnboarding } from "./features/onboarding.js";
 import { initRecipeForm } from "./features/recipe.js";
+import { el } from "./ui.js";
 
 const onboardingEl = document.getElementById("onboarding");
 const appEl = document.getElementById("app");
 const summaryEl = document.getElementById("prefs-summary");
-
-let prefs = loadPrefs(); // null the first time, so the questions are shown
-
 const cuisineEl = document.getElementById("cuisine");
 
 // The home region only applies to Indian food, so for Continental and Chinese we show the diet alone.
@@ -21,35 +19,51 @@ function summarize(p) {
   return "Cooking for: " + [place, diet].filter(Boolean).join(" · ");
 }
 
-function showApp() {
-  onboardingEl.hidden = true;
-  appEl.hidden = false;
-  summaryEl.textContent = summarize(prefs);
-}
+function start() {
+  let prefs = loadPrefs(); // null the first time, so the questions are shown
 
-function showQuestions(initial) {
-  appEl.hidden = true;
-  onboardingEl.hidden = false;
-  startOnboarding({
-    container: onboardingEl,
-    initial,
-    onDone: (answers) => {
-      prefs = answers;
-      savePrefs(prefs);
-      showApp();
-    },
-    onCancel: initial ? showApp : undefined, // can only cancel when there is something to go back to
+  function showApp() {
+    onboardingEl.hidden = true;
+    appEl.hidden = false;
+    summaryEl.textContent = summarize(prefs);
+  }
+
+  function showQuestions(initial) {
+    appEl.hidden = true;
+    onboardingEl.hidden = false;
+    startOnboarding({
+      container: onboardingEl,
+      initial,
+      onDone: (answers) => {
+        prefs = answers;
+        savePrefs(prefs);
+        showApp();
+      },
+      onCancel: initial ? showApp : undefined, // can only cancel when there is something to go back to
+    });
+  }
+
+  initRecipeForm({ getPrefs: () => prefs });
+  document.getElementById("change-prefs").addEventListener("click", () => showQuestions(prefs));
+  cuisineEl.addEventListener("change", () => {
+    if (prefs && !appEl.hidden) summaryEl.textContent = summarize(prefs);
   });
+
+  if (prefs) showApp();
+  else showQuestions(null);
 }
 
-initRecipeForm({ getPrefs: () => prefs });
-document.getElementById("change-prefs").addEventListener("click", () => showQuestions(prefs));
-cuisineEl.addEventListener("change", () => {
-  if (prefs && !appEl.hidden) summaryEl.textContent = summarize(prefs);
-});
-
-if (prefs) showApp();
-else showQuestions(null);
+// The lists of states and diets come from /data/regions.json, so load them first.
+try {
+  await loadRegions();
+  start();
+} catch {
+  onboardingEl.hidden = false;
+  onboardingEl.replaceChildren(
+    el("p", { className: "lead", text: "Couldn't load the app. Please check your internet and try again." }),
+    el("button", { className: "primary", text: "Try again", attrs: { type: "button" }, on: { click: () => location.reload() } })
+  );
+}
 
 // Makes the app installable ("Add to Home Screen").
 if ("serviceWorker" in navigator) {

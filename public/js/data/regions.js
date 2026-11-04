@@ -1,47 +1,24 @@
-// The list of states, regions and diets.
-// Used by the browser (to build the questions) AND by the server (to check the answers),
-// so there is only one list to maintain.
-//
-// To ask a follow-up question for another state, add it to SUB_REGIONS below.
+// States, regions and diets for the browser.
+// The list itself lives in /data/regions.json, which the Python server reads too,
+// so there is only one list to edit. To add a follow-up question for another state,
+// add it under "subRegions" in that JSON file.
 
-export const OTHER_STATE = "Somewhere else";
+export let STATES = [];
+export let OTHER_STATE = "";
+export let DIETS = [];
+let SUB_REGIONS = {};
 
-export const STATES = [
-  "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa",
-  "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala",
-  "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland",
-  "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
-  "Uttar Pradesh", "Uttarakhand", "West Bengal",
-  // Union territories
-  "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
-  "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry",
-];
-
-// "dishes" are hints for the AI, not strict rules. They help it pick the right style of food.
-export const SUB_REGIONS = {
-  Karnataka: [
-    {
-      id: "north",
-      label: "North Karnataka",
-      dishes: "jolada rotti (jowar flatbread), girmit, ennegayi, mirchi bajji, shenga chutney pudi",
-    },
-    {
-      id: "south",
-      label: "South Karnataka",
-      dishes: "ragi mudde with saaru, bisi bele bath, akki rotti, puliyogare, vangi bath",
-    },
-    {
-      id: "coastal",
-      label: "Coastal Karnataka",
-      dishes: "neer dosa, kori rotti, Mangalorean fish or chicken curry, ghee roast, patrode",
-    },
-  ],
-};
-
-export const DIETS = [
-  { id: "veg", label: "Vegetarian", hint: "No meat, fish or eggs" },
-  { id: "nonveg", label: "Non-vegetarian", hint: "Meat, fish and eggs are fine" },
-];
+// Call this once, before anything else uses the lists (main.js does).
+// STATES, OTHER_STATE and DIETS are "live" exports: they fill in as soon as this finishes.
+export async function loadRegions() {
+  const response = await fetch("/data/regions.json");
+  if (!response.ok) throw new Error("Could not load the app's data.");
+  const data = await response.json();
+  STATES = data.states;
+  OTHER_STATE = data.otherState;
+  DIETS = data.diets;
+  SUB_REGIONS = data.subRegions;
+}
 
 export function isKnownState(state) {
   return state === OTHER_STATE || STATES.includes(state);

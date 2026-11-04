@@ -3,7 +3,7 @@
 //
 // WHEN YOU ADD A NEW FRONTEND FILE: add it to SHELL below and bump the CACHE number.
 
-const CACHE = "whats-cooking-v2";
+const CACHE = "whats-cooking-v3";
 const SHELL = [
   "/",
   "/style.css",
@@ -14,6 +14,7 @@ const SHELL = [
   "/js/ui.js",
   "/js/prefs.js",
   "/js/data/regions.js",
+  "/data/regions.json",
   "/js/features/onboarding.js",
   "/js/features/recipe.js",
 ];

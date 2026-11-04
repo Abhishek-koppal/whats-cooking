@@ -1,0 +1,35 @@
+{
+  "otherState": "Somewhere else",
+  "states": [
+    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa",
+    "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala",
+    "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland",
+    "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
+    "Uttar Pradesh", "Uttarakhand", "West Bengal",
+    "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+  ],
+  "subRegions": {
+    "Karnataka": [
+      {
+        "id": "north",
+        "label": "North Karnataka",
+        "dishes": "jolada rotti (jowar flatbread), girmit, ennegayi, mirchi bajji, shenga chutney pudi"
+      },
+      {
+        "id": "south",
+        "label": "South Karnataka",
+        "dishes": "ragi mudde with saaru, bisi bele bath, akki rotti, puliyogare, vangi bath"
+      },
+      {
+        "id": "coastal",
+        "label": "Coastal Karnataka",
+        "dishes": "neer dosa, kori rotti, Mangalorean fish or chicken curry, ghee roast, patrode"
+      }
+    ]
+  },
+  "diets": [
+    { "id": "veg", "label": "Vegetarian", "hint": "No meat, fish or eggs" },
+    { "id": "nonveg", "label": "Non-vegetarian", "hint": "Meat, fish and eggs are fine" }
+  ]
+}
