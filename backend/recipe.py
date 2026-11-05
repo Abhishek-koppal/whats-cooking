@@ -6,9 +6,9 @@ It runs on the server, never in the browser, so the Gemini API key stays secret.
 import os
 
 from fastapi import APIRouter, Request
-from fastapi.responses import JSONResponse
 
-from . import gemini, regions
+from . import gemini
+from .common import diet_rules, error, parse_preferences, reply, style_rules, to_int
 
 router = APIRouter()
 
@@ -39,59 +39,6 @@ RESPONSE_SCHEMA = {
 }
 
 
-def reply(data: dict, status: int = 200) -> JSONResponse:
-    return JSONResponse(data, status_code=status, headers={"Cache-Control": "no-store"})
-
-
-def error(message: str, status: int) -> JSONResponse:
-    return reply({"error": message}, status)
-
-
-# ---------------------------------------------------------------- prompt
-
-
-def diet_rules(diet: str) -> list[str]:
-    if diet == "veg":
-        return [
-            "- DIET: the user is strictly vegetarian. Use no meat, poultry, fish, seafood or eggs, "
-            "and no gelatin or meat stock. If the user listed any of those ingredients, leave them out "
-            "and say so in the tip."
-        ]
-    return [
-        "- DIET: the user eats non-vegetarian food, so meat, fish and eggs are all fine. "
-        "Vegetarian dishes are fine too."
-    ]
-
-
-def style_rules(cuisine: str, state: str, region: str | None) -> list[str]:
-    """The home region only shapes Indian recipes.
-
-    Continental and Chinese are made in their own style, with no regional twist and no fusion.
-    Only the diet rule still applies to them.
-    """
-    if cuisine != "Indian":
-        style = "Continental (European-style)" if cuisine == "Continental" else cuisine
-        return [
-            f"- STYLE: make a genuine {style} dish. Do not mix in Indian or regional home-cooking "
-            "styles, spices or dishes, and do not make a fusion dish. "
-            "The user's home region does not apply to this cuisine."
-        ]
-    if state == regions.other_state():
-        return []
-
-    label = regions.describe_region(state, region)
-    sub = regions.find_sub_region(state, region)
-    examples = f", for example: {sub['dishes']}" if sub else ""
-    return [
-        f"- HOME FOOD: the user is from {label}, India. Mostly suggest dishes typical of everyday "
-        f"{label} home cooking{examples}.",
-        "- Now and then, other popular everyday Indian dishes (such as idli, dosa, poha or upma) "
-        "are fine for variety.",
-        "- The ingredients the user has come first: only pick a regional dish that can really be made "
-        "from them. Ignore any example dish that breaks the diet rule.",
-    ]
-
-
 def build_prompt(ingredients: str, servings: int, cuisine: str, state: str, region: str | None, diet: str) -> str:
     return "\n".join(
         [
@@ -116,24 +63,6 @@ def build_prompt(ingredients: str, servings: int, cuisine: str, state: str, regi
     )
 
 
-# ---------------------------------------------------------------- validation
-
-
-def _to_int(value) -> int | None:
-    """Accepts 2, 2.0 and "2". Rejects 2.5, "abc", true, null."""
-    if isinstance(value, bool):
-        return None
-    if isinstance(value, int):
-        return value
-    if isinstance(value, (float, str)):
-        try:
-            number = float(value)
-        except ValueError:
-            return None
-        return int(number) if number.is_integer() else None
-    return None
-
-
 def parse_request(body) -> tuple[dict | None, str | None]:
     """Checks what the browser sent. Never trust the frontend.
 
@@ -143,11 +72,8 @@ def parse_request(body) -> tuple[dict | None, str | None]:
         return None, "Invalid request."
 
     ingredients = str(body.get("ingredients") or "").strip()
-    servings = _to_int(body.get("servings"))
+    servings = to_int(body.get("servings"))
     cuisine = str(body.get("cuisine") or "")
-    state = str(body.get("state") or "")
-    region_id = str(body["region"]) if body.get("region") else None
-    diet = str(body.get("diet") or "")
 
     if not ingredients:
         return None, "Please enter at least one ingredient."
@@ -157,30 +83,12 @@ def parse_request(body) -> tuple[dict | None, str | None]:
         return None, f"Servings must be between {MIN_SERVINGS} and {MAX_SERVINGS}."
     if cuisine not in CUISINES:
         return None, "Please choose a type of food."
-    if not regions.is_known_state(state):
-        return None, "Please tell me which state you are from."
-    if not regions.is_known_diet(diet):
-        return None, "Please choose vegetarian or non-vegetarian."
 
-    # Only states with a follow-up question (like Karnataka) need a region.
-    region = None
-    if regions.sub_regions_of(state):
-        if not regions.find_sub_region(state, region_id):
-            return None, f"Please choose which part of {state}."
-        region = region_id
+    prefs, problem = parse_preferences(body)
+    if problem:
+        return None, problem
 
-    clean = {
-        "ingredients": ingredients,
-        "servings": servings,
-        "cuisine": cuisine,
-        "state": state,
-        "region": region,
-        "diet": diet,
-    }
-    return clean, None
-
-
-# ---------------------------------------------------------------- the endpoint
+    return {"ingredients": ingredients, "servings": servings, "cuisine": cuisine, **prefs}, None
 
 
 @router.post("/api/recipe")

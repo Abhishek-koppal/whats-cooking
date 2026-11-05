@@ -1,9 +1,9 @@
 // The one place that talks to our backend.
 
-export async function getRecipe(payload) {
+async function postJson(url, payload) {
   let response;
   try {
-    response = await fetch("/api/recipe", {
+    response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -17,3 +17,6 @@ export async function getRecipe(payload) {
   if (!response.ok) throw new Error(data.error || "Something went wrong. Please try again.");
   return data;
 }
+
+export const getRecipe = (payload) => postJson("/api/recipe", payload);
+export const getPlan = (payload) => postJson("/api/plan", payload);

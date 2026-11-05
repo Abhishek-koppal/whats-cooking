@@ -11,12 +11,14 @@ import os
 from fastapi import FastAPI
 
 from backend import gemini, regions
+from backend.plan import router as plan_router
 from backend.recipe import router as recipe_router
 
 # The automatic /docs pages are switched off so the public link only exposes what the app needs.
 app = FastAPI(title="What's Cooking?", docs_url=None, redoc_url=None, openapi_url=None)
 
 app.include_router(recipe_router)
+app.include_router(plan_router)
 # Adding a feature = create backend/<feature>.py with a router, then add one line here.
 
 

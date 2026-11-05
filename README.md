@@ -14,7 +14,9 @@ Phone (public/)  ──►  /api/recipe (backend/recipe.py)  ──►  Gemini
 ```
 app.py                 creates the backend and plugs in the features
 backend/
-  recipe.py            the recipe feature (/api/recipe): checks input, builds the prompt
+  plan.py              today's menu (/api/plan): 3 meals with full recipes in ONE request
+  recipe.py            recipe from the ingredients you have (/api/recipe)
+  common.py            shared checks and prompt rules (diet, home region)
   gemini.py            the only code that talks to Gemini
   regions.py           reads public/data/regions.json
 public/                the website; Vercel serves it directly
@@ -58,6 +60,17 @@ Run the tests with `pytest`. They use a fake Gemini, so they cost no quota.
 6. Open `https://<project>.vercel.app/api/health`. You should see `"ok": true`. If `regions_loaded` is false, tell me and I'll fix the packaging.
 
 If opening the link in a private window asks you to log in to Vercel, turn off "Vercel Authentication" in the project's Settings → Deployment Protection.
+
+## Today's menu and your quota
+
+The home screen shows breakfast, lunch and dinner for the day. To keep Gemini use low:
+
+- **One request per person per day** plans all three meals, with full recipes. It is saved on the phone, so opening the app again, or tapping "View today's recipes", costs nothing.
+- A new request is made only when the day changes, when the answers (state, diet, people) change, or when "Suggest a different menu" is tapped (2 times a day on a phone).
+- The last few days' dish names are sent along so the menu changes from day to day.
+- Dish pictures are emoji tiles drawn by the phone, so no images are generated or downloaded.
+
+The 2-a-day limit is kept on the phone, so it is a nudge, not real protection. The invite code and server-side limits (next steps below) are what protect your quota once the link is shared.
 
 ## Limits and costs
 

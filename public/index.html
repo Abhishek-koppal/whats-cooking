@@ -14,53 +14,64 @@
   <main>
     <h1>What's Cooking?</h1>
 
-    <!-- First-visit questions (filled in by js/features/onboarding.js) -->
+    <!-- The questions (filled in by js/features/onboarding.js) -->
     <section id="onboarding" hidden></section>
 
     <!-- The main app -->
     <div id="app" hidden>
-      <p class="lead">Tell me what you have at home and I'll suggest a recipe.</p>
-
       <div class="prefs-bar">
         <span id="prefs-summary"></span>
         <button type="button" id="change-prefs" class="link">Change</button>
       </div>
 
-      <form id="form">
-        <label for="ingredients">Ingredients you have</label>
-        <textarea id="ingredients" rows="3" maxlength="300"
-          placeholder="For example: rice, water, salt, egg" required></textarea>
+      <!-- Today's menu (js/features/today.js) -->
+      <section id="home"></section>
 
-        <label for="servings">How many servings?</label>
-        <div class="stepper">
-          <button type="button" id="minus" aria-label="One less serving">−</button>
-          <input id="servings" type="number" value="2" min="1" max="12" inputmode="numeric" required>
-          <button type="button" id="plus" aria-label="One more serving">+</button>
-        </div>
+      <!-- Today's recipes (js/features/today.js) -->
+      <section id="recipes" hidden></section>
 
-        <label for="cuisine">Type of food</label>
-        <select id="cuisine">
-          <option value="Indian">Indian</option>
-          <option value="Continental">Continental</option>
-          <option value="Chinese">Chinese</option>
-        </select>
+      <!-- Recipe from the ingredients you have (js/features/recipe.js) -->
+      <section id="cook" hidden>
+        <button type="button" id="back-home" class="link back">← Today's menu</button>
+        <h2>Cook with what I have</h2>
+        <p class="lead">Tell me what you have at home and I'll suggest a recipe.</p>
 
-        <button type="submit" id="go" class="primary">Get recipe</button>
-      </form>
+        <form id="form">
+          <label for="ingredients">Ingredients you have</label>
+          <textarea id="ingredients" rows="3" maxlength="300"
+            placeholder="For example: rice, water, salt, egg" required></textarea>
 
-      <p id="status" role="status" aria-live="polite"></p>
+          <label for="servings">How many servings?</label>
+          <div class="stepper">
+            <button type="button" id="minus" aria-label="One less serving">−</button>
+            <input id="servings" type="number" value="2" min="1" max="12" inputmode="numeric" required>
+            <button type="button" id="plus" aria-label="One more serving">+</button>
+          </div>
 
-      <section id="result" hidden>
-        <h2 id="recipe-name"></h2>
-        <p id="recipe-meta" class="meta"></p>
+          <label for="cuisine">Type of food</label>
+          <select id="cuisine">
+            <option value="Indian">Indian</option>
+            <option value="Continental">Continental</option>
+            <option value="Chinese">Chinese</option>
+          </select>
 
-        <h3>What you need</h3>
-        <ul id="recipe-ingredients"></ul>
+          <button type="submit" id="go" class="primary">Get recipe</button>
+        </form>
 
-        <h3>How to make it</h3>
-        <ol id="recipe-steps"></ol>
+        <p id="status" role="status" aria-live="polite"></p>
 
-        <p id="recipe-tip" class="tip" hidden></p>
+        <section id="result" hidden>
+          <h2 id="recipe-name"></h2>
+          <p id="recipe-meta" class="meta"></p>
+
+          <h3>What you need</h3>
+          <ul id="recipe-ingredients"></ul>
+
+          <h3>How to make it</h3>
+          <ol id="recipe-steps"></ol>
+
+          <p id="recipe-tip" class="tip" hidden></p>
+        </section>
       </section>
     </div>
   </main>
