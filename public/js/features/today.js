@@ -99,7 +99,7 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
         el(
           "div",
           {},
-          el("h2", { text: `${greet.text} ${greet.icon}` }),
+          el("h2", { text: greet.text }),
           el("p", { className: "meta", text: `${now.toLocaleDateString(undefined, { weekday: "long" })} · Let's make something delicious` })
         ),
         el("span", { className: "chef", text: "🧑‍🍳", attrs: { "aria-hidden": "true" } })
@@ -113,7 +113,7 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
       ),
       el("h3", { className: "section-title", text: "Today's meals" }),
       list,
-      el("button", { className: "primary dark", text: "View today's recipes →", attrs: { type: "button" }, on: { click: () => go("recipes") } }),
+      el("button", { className: "primary dark", text: "View today's recipes", attrs: { type: "button" }, on: { click: () => go("recipes") } }),
       notice ? el("p", { className: "error", text: notice, attrs: { role: "alert" } }) : "",
       el(
         "div",

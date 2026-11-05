@@ -3,8 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>What's Cooking?</title>
-  <meta name="theme-color" content="#c2410c">
+  <title>Rasoi</title>
+  <meta name="theme-color" content="#fdfdfb" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#121311" media="(prefers-color-scheme: dark)">
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/icon-192.png">
   <link rel="apple-touch-icon" href="/icon-192.png">
@@ -12,13 +13,20 @@
 </head>
 <body>
   <main>
-    <h1>What's Cooking?</h1>
+    <header class="top">
+      <h1>Rasoi</h1>
+      <!-- Bigger text on/off (js/features/textSize.js) -->
+      <button type="button" id="text-size" class="size-btn" aria-pressed="false" aria-label="Bigger text">Aa</button>
+    </header>
 
     <!-- The questions (filled in by js/features/onboarding.js) -->
     <section id="onboarding" hidden></section>
 
     <!-- The main app -->
     <div id="app" hidden>
+      <!-- The feature buttons, shown on the home screen (js/features/nav.js) -->
+      <nav id="nav" class="nav-grid" aria-label="Rasoi"></nav>
+
       <div class="prefs-bar">
         <span id="prefs-summary"></span>
         <button type="button" id="change-prefs" class="link">Change</button>
@@ -30,9 +38,12 @@
       <!-- Today's recipes (js/features/today.js) -->
       <section id="recipes" hidden></section>
 
+      <!-- A feature that is not built yet (js/features/nav.js) -->
+      <section id="soon" hidden></section>
+
       <!-- Recipe from the ingredients you have (js/features/recipe.js) -->
       <section id="cook" hidden>
-        <button type="button" id="back-home" class="link back">← Today's menu</button>
+        <button type="button" id="back-home" class="link back">← Home</button>
         <h2>Cook with what I have</h2>
         <p class="lead">Tell me what you have at home and I'll suggest a recipe.</p>
 

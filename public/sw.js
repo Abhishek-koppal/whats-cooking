@@ -3,7 +3,7 @@
 //
 // WHEN YOU ADD A NEW FRONTEND FILE: add it to SHELL below and bump the CACHE number.
 
-const CACHE = "whats-cooking-v4";
+const CACHE = "rasoi-v6";
 const SHELL = [
   "/",
   "/style.css",
@@ -15,11 +15,14 @@ const SHELL = [
   "/js/prefs.js",
   "/js/planStore.js",
   "/js/dishArt.js",
+  "/js/icons.js",
   "/js/data/regions.js",
   "/data/regions.json",
   "/js/features/onboarding.js",
   "/js/features/recipe.js",
   "/js/features/today.js",
+  "/js/features/nav.js",
+  "/js/features/textSize.js",
 ];
 
 self.addEventListener("install", (event) => {

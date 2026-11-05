@@ -1,4 +1,4 @@
-# What's Cooking?
+# Rasoi
 
 Enter the ingredients you have, pick the number of servings and a type of food, and get a recipe with quantities and steps. It asks where you are from (for Indian food) and whether you eat veg or non-veg. It is a web app that can be installed on a phone ("Add to Home Screen").
 
@@ -23,6 +23,7 @@ public/                the website; Vercel serves it directly
   index.html, style.css, sw.js, manifest, icons
   data/regions.json    states, regions and diets (the ONE list, used by browser and server)
   js/                  main.js starts the app; features/ has one file per feature
+    features/nav.js    the grid of feature buttons; connect a finished feature by changing its `view` there
 tests/                 pytest tests for the backend
 dev.py                 runs everything on your computer (local use only)
 ```

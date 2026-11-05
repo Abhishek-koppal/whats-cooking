@@ -1,304 +1,397 @@
-/* Big text, big buttons, high contrast: easy to use for anyone. */
+/* Rasoi: a quiet, minimal look.
+   Near-black text on white, one olive accent, hairline dividers, small spaced capitals for labels.
+   Light and dark colours follow the phone's setting. The "Aa" button makes all text bigger.
+   Everything is sized in rem, so the bigger-text option scales the whole app. */
+
 :root {
-  --bg: #fffaf3;
-  --ink: #1f1a17;
-  --muted: #6b5f57;
-  --accent: #c2410c;
+  --bg: #fdfdfb;
+  --surface: #f3f3ec;      /* soft sage-white panels */
+  --ink: #1d1e1a;
+  --muted: #666a5e;
+  --accent: #46593a;       /* olive */
   --accent-ink: #ffffff;
-  --card: #ffffff;
-  --line: #e7d9cb;
+  --line: #dcddd2;
+  --error: #a3322b;
+  --tile-breakfast: #f1eedd;
+  --tile-lunch: #e6ebdc;
+  --tile-dinner: #ece6dd;
+  --sans: "Helvetica Neue", Helvetica, Inter, system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  --serif: "Iowan Old Style", "New York", "Palatino Linotype", Palatino, Georgia, serif;
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #121311;
+    --surface: #1b1d19;
+    --ink: #ecede5;
+    --muted: #a0a398;
+    --accent: #a9c08f;
+    --accent-ink: #121311;
+    --line: #2d302a;
+    --error: #f0968f;
+    --tile-breakfast: #26261d;
+    --tile-lunch: #1f261c;
+    --tile-dinner: #272320;
+    color-scheme: dark;
+  }
 }
 
 * { box-sizing: border-box; }
 
-html { font-size: 20px; }
+html { font-size: 18px; -webkit-text-size-adjust: 100%; }
+html[data-text="large"] { font-size: 22px; }
 
 body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  line-height: 1.5;
+  font-family: var(--sans);
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
 }
 
 main {
-  max-width: 36rem;
+  max-width: 34rem;
   margin: 0 auto;
-  padding: 1.25rem 1rem 3rem;
+  padding: 1.25rem 1.25rem 4rem;
 }
 
-h1 { font-size: 1.9rem; margin: 0.25rem 0; color: var(--accent); }
-h2 { font-size: 1.6rem; margin: 0 0 0.25rem; }
-h3 { font-size: 1.2rem; margin: 1.5rem 0 0.5rem; }
+/* ---------- Header: "RASOI." and the Aa button ---------- */
+.top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.9rem;
+  margin-bottom: 1.1rem;
+  border-bottom: 1px solid var(--line);
+}
+
+h1 {
+  margin: 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  line-height: 1;
+}
+
+/* the green dot after the name (hidden from screen readers) */
+h1::after { content: "." / ""; color: var(--accent); }
+
+.size-btn {
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  padding: 0 0.6rem;
+  font: inherit;
+  font-size: 0.95rem;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  cursor: pointer;
+}
+.size-btn[aria-pressed="true"] { background: var(--surface); border-color: var(--accent); color: var(--accent); }
+
+/* ---------- Type ---------- */
+h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.9rem;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+h3 { margin: 1.5rem 0 0.5rem; font-size: 1.1rem; font-weight: 600; letter-spacing: -0.01em; }
 
 .lead { margin: 0 0 1.25rem; color: var(--muted); }
 
-label {
-  display: block;
-  font-weight: 700;
-  margin: 1.1rem 0 0.4rem;
+/* small spaced capitals, like "01 / THE COMPANION" */
+.eyebrow, label {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
+.eyebrow { margin: 0 0 0.35rem; color: var(--muted); }
 
+label { display: block; margin: 1.5rem 0 0.45rem; color: var(--muted); }
+
+/* ---------- Form fields ---------- */
 textarea, select, input[type="number"] {
   width: 100%;
   font: inherit;
   padding: 0.7rem 0.8rem;
-  border: 2px solid var(--line);
-  border-radius: 0.75rem;
-  background: var(--card);
   color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  transition: border-color 0.2s;
 }
+textarea:focus, select:focus, input:focus { outline: none; border-color: var(--ink); }
+button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
 
-textarea:focus, select:focus, input:focus, button:focus-visible {
-  outline: 3px solid #f59e0b;
-  outline-offset: 2px;
-}
-
-.stepper {
-  display: grid;
-  grid-template-columns: 4rem 1fr 4rem;
-  gap: 0.5rem;
-}
-
-.stepper input { text-align: center; font-size: 1.4rem; font-weight: 700; }
-
+.stepper { display: grid; grid-template-columns: 3.75rem 1fr 3.75rem; gap: 0.5rem; }
+.stepper input { text-align: center; font-size: 1.3rem; font-weight: 500; }
 .stepper button {
   font: inherit;
-  font-size: 1.8rem;
-  font-weight: 700;
-  border: 2px solid var(--line);
-  border-radius: 0.75rem;
-  background: var(--card);
-  color: var(--accent);
-  min-height: 3.5rem;
+  font-size: 1.5rem;
+  font-weight: 300;
+  min-height: 3.25rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.15s;
 }
+.stepper button:active { transform: scale(0.97); background: var(--surface); }
 
+/* ---------- Buttons ---------- */
 button.primary {
-  display: block;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   width: 100%;
   margin-top: 1.5rem;
-  min-height: 3.75rem;
+  min-height: 3.5rem;
+  padding: 0 1.25rem;
   font: inherit;
-  font-size: 1.3rem;
-  font-weight: 700;
-  border: 0;
-  border-radius: 0.9rem;
-  background: var(--accent);
+  font-size: 1rem;
   color: var(--accent-ink);
+  background: var(--ink);
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.15s;
+}
+button.primary::after { content: "↗"; font-size: 1.1rem; font-weight: 300; }
+button.primary:active { transform: scale(0.985); }
+button.primary:disabled { opacity: 0.55; }
+
+button.secondary {
+  min-height: 3.5rem;
+  padding: 0 1.25rem;
+  font: inherit;
+  font-size: 1rem;
+  color: var(--ink);
+  background: none;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  cursor: pointer;
 }
 
-button.primary:disabled { opacity: 0.6; }
-
-#status { min-height: 1.5rem; margin: 1rem 0 0; font-weight: 600; }
-#status.error { color: #b91c1c; }
-
-#result {
-  margin-top: 1.5rem;
-  padding: 1.25rem;
-  background: var(--card);
-  border: 2px solid var(--line);
-  border-radius: 1rem;
+/* quiet underlined link, like "Start with a recipe ↗" */
+button.link {
+  min-height: 2.75rem;
+  padding: 0.4rem 0;
+  font: inherit;
+  font-size: 0.95rem;
+  color: var(--ink);
+  background: none;
+  border: 0;
+  border-bottom: 1px solid var(--ink);
+  border-radius: 0;
+  cursor: pointer;
 }
+button.link.back { margin-bottom: 0.75rem; border-bottom-color: transparent; color: var(--muted); padding-left: 0; }
+
+#status { min-height: 1.5rem; margin: 1rem 0 0; color: var(--muted); }
+#status.error { color: var(--error); }
+
+#result { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid var(--line); }
 
 .meta { margin: 0; color: var(--muted); }
 
-#recipe-ingredients, #recipe-steps { padding-left: 1.4rem; margin: 0; }
+#recipe-ingredients, #recipe-steps { padding-left: 1.3rem; margin: 0; }
 #recipe-ingredients li, #recipe-steps li { margin-bottom: 0.6rem; }
 
 .tip {
   margin: 1.25rem 0 0;
-  padding: 0.8rem 1rem;
-  background: #fff3e0;
-  border-radius: 0.75rem;
+  padding: 0.9rem 1rem;
+  background: var(--surface);
+  border-radius: 2px;
 }
 
-/* "Cooking for: North Karnataka · Vegetarian   [Change]" */
+/* ---------- "Cooking for: ..." line ---------- */
 .prefs-bar {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin: 0 0 0.5rem;
-  padding: 0.4rem 0.4rem 0.4rem 0.9rem;
-  background: #fff3e0;
-  border-radius: 0.75rem;
+  margin: 0 0 1.25rem;
 }
+#prefs-summary { font-size: 0.7rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.prefs-bar .link { flex: 0 0 auto; min-height: 2.5rem; padding: 0.2rem 0; font-size: 0.85rem; }
 
-#prefs-summary { font-weight: 600; font-size: 0.85rem; }
-
-button.link {
-  font: inherit;
-  font-weight: 700;
-  color: var(--accent);
-  background: none;
-  border: 0;
-  padding: 0.5rem 0.75rem;
-  min-height: 2.75rem;
-  text-decoration: underline;
-}
-
-/* First-visit questions: big tappable choices */
-.choices { display: grid; gap: 0.75rem; margin-top: 1rem; }
+/* ---------- First-visit questions ---------- */
+.choices { display: grid; gap: 0.6rem; margin-top: 1.25rem; }
 
 .choice {
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
   min-height: 4rem;
-  padding: 1rem;
+  padding: 1rem 1.1rem;
   font: inherit;
   text-align: left;
   color: var(--ink);
-  background: var(--card);
-  border: 2px solid var(--line);
-  border-radius: 0.9rem;
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
 }
-
-.choice strong { font-size: 1.2rem; }
-.choice span { color: var(--muted); font-size: 0.9rem; }
+.choice strong { font-size: 1.1rem; font-weight: 500; letter-spacing: -0.01em; }
+.choice span { color: var(--muted); font-size: 0.85rem; }
 .choice span:empty { display: none; }
-
-.choice[aria-pressed="true"] {
-  border-color: var(--accent);
-  background: #fff3e0;
-  box-shadow: 0 0 0 2px var(--accent) inset;
-}
+.choice[aria-pressed="true"] { border-color: var(--ink); background: var(--surface); }
 
 #onboarding select { margin-top: 1rem; }
 
-.nav { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+.nav { display: flex; gap: 0.6rem; margin-top: 1.5rem; }
 .nav button { flex: 1; margin-top: 0; }
 .nav .secondary { flex: 0 0 auto; }
 
-button.secondary {
-  min-height: 3.75rem;
-  padding: 0 1.25rem;
-  font: inherit;
-  font-size: 1.2rem;
-  font-weight: 700;
-  color: var(--ink);
-  background: var(--card);
-  border: 2px solid var(--line);
-  border-radius: 0.9rem;
-}
+/* ---------- Today's menu (home) ---------- */
+.today-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.75rem; }
+.today-head h2 { font-size: 2.4rem; margin: 0; letter-spacing: -0.045em; }
+/* the line under the greeting: italic serif, like "More wonder." */
+.today-head .meta { margin: 0.35rem 0 0; font-family: var(--serif); font-style: italic; font-size: 1.15rem; color: var(--ink); }
+.chef { display: none; }
 
-/* ---------- Today's menu (home screen) ---------- */
-.today-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 0.75rem;
-}
+.plan-box { margin: 1.5rem 0 0; padding: 1.1rem 1.2rem; background: var(--surface); border-radius: 2px; }
+.plan-box h3 { margin: 0 0 0.25rem; font-size: 1.25rem; font-weight: 500; letter-spacing: -0.02em; }
+.plan-box p { margin: 0; color: var(--muted); font-size: 0.95rem; }
+.plan-box .eyebrow { color: var(--accent); }
 
-.today-head h2 { font-size: 1.5rem; margin: 0; }
-.today-head .meta { margin: 0.1rem 0 0; }
-.chef { font-size: 2.6rem; line-height: 1; }
+.section-title { margin: 2rem 0 0; padding-bottom: 0.6rem; border-bottom: 1px solid var(--line); }
 
-.plan-box {
-  margin: 1rem 0 0;
-  padding: 1rem 1.1rem;
-  background: #f6efe6;
-  border-radius: 1rem;
-}
-
-.plan-box h3 { margin: 0 0 0.25rem; font-size: 1.4rem; }
-.plan-box p { margin: 0; }
-
-.eyebrow {
-  margin: 0 0 0.25rem;
-  font-size: 0.75rem;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
-
-.section-title { margin: 1.4rem 0 0.25rem; }
-
-.meals { list-style: none; margin: 0; padding: 0; }
+.meals { list-style: none; margin: 0; padding: 0; counter-reset: meal; }
+.meals li { counter-increment: meal; }
 
 .meal {
   display: flex;
   align-items: center;
   gap: 1rem;
   width: 100%;
-  padding: 0.9rem 0;
+  padding: 1rem 0;
   font: inherit;
   text-align: left;
   color: var(--ink);
   background: none;
   border: 0;
   border-bottom: 1px solid var(--line);
+  cursor: pointer;
+  transition: padding-left 0.25s ease;
 }
-
-.meals li:last-child .meal { border-bottom: 0; }
+.meal:active { padding-left: 0.4rem; }
 
 .tile {
   flex: 0 0 auto;
   display: grid;
   place-items: center;
-  width: 5rem;
-  height: 5rem;
-  border-radius: 1rem;
-  font-size: 2.6rem;
+  width: 4.25rem;
+  height: 4.25rem;
+  border-radius: 2px;
+  font-size: 2.1rem;
+  background: var(--surface);
 }
+.tile[data-slot="breakfast"] { background: var(--tile-breakfast); }
+.tile[data-slot="lunch"] { background: var(--tile-lunch); }
+.tile[data-slot="dinner"] { background: var(--tile-dinner); }
 
-.meal-body { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-.meal-head { display: flex; align-items: center; flex-wrap: wrap; gap: 0.1rem 0.6rem; }
-.meal-slot { font-weight: 700; font-size: 1.1rem; }
-.meal-name { font-size: 1.05rem; }
+.meal-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.1rem; }
+.meal-head { display: flex; align-items: center; flex-wrap: wrap; gap: 0.1rem 0.7rem; }
+.meal-slot { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.meals .meal-slot::before { content: counter(meal, decimal-leading-zero) " / "; }
+.meal-name { font-size: 1.1rem; font-weight: 500; letter-spacing: -0.015em; line-height: 1.3; }
 .meal-meta { color: var(--muted); font-size: 0.85rem; }
 
+/* "Up next": small green label with a dot */
 .tag {
   flex: 0 0 auto;
-  padding: 0.05rem 0.6rem;
-  font-size: 0.8rem;
-  font-weight: 700;
-  color: #1f6f2c;
-  background: #dff2e0;
-  border-radius: 999px;
+  font-size: 0.62rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
 }
+.tag::before { content: ""; display: inline-block; width: 0.4rem; height: 0.4rem; margin-right: 0.35rem; border-radius: 50%; background: var(--accent); vertical-align: 0.05rem; }
 
-button.primary.dark { background: var(--ink); margin-top: 0.75rem; }
+button.primary.dark { margin-top: 1.5rem; }
 
-.home-links {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: center;
-  gap: 0.25rem 1rem;
-  margin-top: 0.75rem;
-}
-
-.home-note { text-align: center; color: var(--muted); }
-.error { color: #b91c1c; font-weight: 600; }
-.loading { text-align: center; padding: 2.5rem 0; }
+.home-links { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.25rem 1.25rem; margin-top: 1.25rem; }
+.home-note { color: var(--muted); font-size: 0.9rem; }
+.error { color: var(--error); }
+.loading { text-align: center; padding: 3rem 0; }
+.loading .chef { display: block; font-size: 2rem; animation: breathe 2.4s ease-in-out infinite; }
 .loading .lead { margin-top: 0.75rem; }
 
-button.link.back { padding-left: 0; margin-bottom: 0.25rem; }
-
 /* ---------- Today's recipes ---------- */
-.recipe {
-  margin: 0 0 0.9rem;
-  background: var(--card);
-  border: 2px solid var(--line);
-  border-radius: 1rem;
-}
+.recipe { border-bottom: 1px solid var(--line); }
+.recipe:first-of-type { border-top: 1px solid var(--line); }
 
-.recipe summary {
-  display: flex;
-  align-items: center;
-  gap: 0.9rem;
-  padding: 0.8rem;
-  cursor: pointer;
-  list-style: none;
-}
-
+.recipe summary { display: flex; align-items: center; gap: 1rem; padding: 1rem 0; cursor: pointer; list-style: none; }
 .recipe summary::-webkit-details-marker { display: none; }
-.recipe summary::after { content: "▾"; color: var(--muted); font-size: 1.2rem; }
-.recipe[open] summary::after { transform: rotate(180deg); }
-.recipe .tile { width: 4rem; height: 4rem; font-size: 2.1rem; }
+.recipe summary::after { content: "+"; font-size: 1.5rem; font-weight: 300; color: var(--muted); transition: transform 0.25s; }
+.recipe[open] summary::after { transform: rotate(45deg); }
+.recipe .tile { width: 3.5rem; height: 3.5rem; font-size: 1.7rem; }
 
-.recipe-body { padding: 0 1.1rem 1.1rem; }
-.recipe-body h4 { margin: 1rem 0 0.4rem; font-size: 1.1rem; }
-.recipe-body ul, .recipe-body ol { margin: 0; padding-left: 1.4rem; }
+.recipe-body { padding: 0 0 1.4rem; animation: rise 0.4s ease both; }
+.recipe-body h4 { margin: 1.2rem 0 0.5rem; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.recipe-body ul, .recipe-body ol { margin: 0; padding-left: 1.3rem; }
 .recipe-body li { margin-bottom: 0.5rem; }
+
+/* ---------- The six feature buttons: a hairline grid ---------- */
+.nav-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1px;
+  margin: 0 0 1.5rem;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+
+.nav-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  min-height: 5.25rem;
+  padding: 0.7rem 0.25rem;
+  font: inherit;
+  font-size: 0.78rem;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  background: var(--bg);
+  border: 0;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.nav-tile svg { stroke-width: 1.25; }
+.nav-tile:active { background: var(--surface); }
+.nav-tile[aria-current="page"] { color: var(--accent); background: var(--surface); }
+
+.soon { text-align: center; padding: 3rem 0; }
+.soon svg { color: var(--accent); stroke-width: 1; }
+.soon h2 { margin: 1rem 0 0.25rem; }
+
+/* "hidden" must win over the display rules above, so the grid really disappears off the home screen */
+.nav-grid[hidden] { display: none; }
+
+/* ---------- Gentle motion ---------- */
+@keyframes rise { from { opacity: 0; transform: translateY(0.6rem); } to { opacity: 1; transform: none; } }
+@keyframes breathe { 0%, 100% { opacity: 0.45; transform: scale(0.96); } 50% { opacity: 1; transform: scale(1); } }
+
+#onboarding, #home, #recipes, #soon, #cook { animation: rise 0.5s ease both; }
+.nav-grid { animation: rise 0.5s ease both; }
+.meals li { animation: rise 0.6s ease both; }
+.meals li:nth-child(2) { animation-delay: 0.08s; }
+.meals li:nth-child(3) { animation-delay: 0.16s; }
+.plan-box { animation: rise 0.6s ease both; animation-delay: 0.05s; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

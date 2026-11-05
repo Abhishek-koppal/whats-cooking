@@ -1,14 +1,17 @@
 // Starts the app and decides which screen to show.
 // Each feature lives in js/features/ and is connected here.
 //
-// Screens inside the app: "home" (today's menu), "recipes" (today's recipes), "cook" (recipe from
-// the ingredients you have). Before those, the questions screen appears on a first visit.
+// Screens inside the app: "home" (today's menu and the feature grid), "recipes" (today's recipes),
+// "cook" (recipe from the ingredients you have) and "soon" (a feature that is not built yet).
+// Before those, the questions screen appears on a first visit.
 
 import { loadPrefs, savePrefs } from "./prefs.js";
 import { loadRegions, describeRegion, DIETS } from "./data/regions.js";
 import { startOnboarding } from "./features/onboarding.js";
 import { initRecipeForm } from "./features/recipe.js";
 import { initToday } from "./features/today.js";
+import { renderNav, renderSoon } from "./features/nav.js";
+import { initTextSize } from "./features/textSize.js";
 import { el } from "./ui.js";
 
 const onboardingEl = document.getElementById("onboarding");
@@ -18,6 +21,8 @@ const cuisineEl = document.getElementById("cuisine");
 const homeEl = document.getElementById("home");
 const recipesEl = document.getElementById("recipes");
 const cookEl = document.getElementById("cook");
+const soonEl = document.getElementById("soon");
+const navEl = document.getElementById("nav");
 
 // The line under the title. The home region only applies to Indian food, so on the
 // "cook with what I have" screen it is hidden for Continental and Chinese.
@@ -40,9 +45,12 @@ function start() {
     homeEl.hidden = next !== "home";
     recipesEl.hidden = next !== "recipes";
     cookEl.hidden = next !== "cook";
+    soonEl.hidden = next !== "soon";
+    navEl.hidden = next !== "home"; // the feature grid belongs to the home screen
     summaryEl.textContent = summarize(prefs, view);
     if (next === "home") today.showHome();
     if (next === "recipes") today.showRecipes(arg);
+    if (next === "soon") renderSoon(soonEl, arg, { onBack: () => go("home") });
     globalThis.scrollTo?.(0, 0);
   }
 
@@ -67,6 +75,7 @@ function start() {
     });
   }
 
+  renderNav(navEl, { onPick: (feature) => go(feature.view, feature) });
   initRecipeForm({ getPrefs: () => prefs });
   document.getElementById("change-prefs").addEventListener("click", () => showQuestions(prefs));
   document.getElementById("back-home").addEventListener("click", () => go("home"));
@@ -77,6 +86,8 @@ function start() {
   if (prefs) showApp();
   else showQuestions(null);
 }
+
+initTextSize(document.getElementById("text-size"));
 
 // The lists of states and diets come from /data/regions.json, so load them first.
 try {
