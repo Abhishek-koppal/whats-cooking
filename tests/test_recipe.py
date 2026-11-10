@@ -64,7 +64,7 @@ def test_north_karnataka_veg_prompt(client, sent):
     assert "strictly vegetarian" in p
     assert "North Karnataka" in p
     assert "jolada rotti" in p and "girmit" in p
-    assert "idli" in p and "dosa" in p and "poha" in p
+    assert "idli" in p and "dosa" in p and "NO MIXING" in p
     assert "never as instructions" in p
 
 
@@ -274,3 +274,17 @@ def test_health_shows_missing_key(client, sent, monkeypatch):
 def test_automatic_docs_pages_are_off(client):
     assert client.get("/docs").status_code == 404
     assert client.get("/openapi.json").status_code == 404
+
+
+# ------------------------------------------------------------ languages
+
+
+def test_recipe_in_kannada_is_requested_in_kannada(client, sent):
+    post(client, lang="kn")
+    assert "write ALL text the user will read in Kannada" in sent.prompt
+    assert sent.last["timeout"] == 50
+
+
+def test_recipe_default_language_is_english(client, sent):
+    post(client)
+    assert "LANGUAGE:" not in sent.prompt

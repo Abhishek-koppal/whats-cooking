@@ -1,35 +1,100 @@
 {
   "otherState": "Somewhere else",
   "states": [
-    "Andhra Pradesh", "Arunachal Pradesh", "Assam", "Bihar", "Chhattisgarh", "Goa",
-    "Gujarat", "Haryana", "Himachal Pradesh", "Jharkhand", "Karnataka", "Kerala",
-    "Madhya Pradesh", "Maharashtra", "Manipur", "Meghalaya", "Mizoram", "Nagaland",
-    "Odisha", "Punjab", "Rajasthan", "Sikkim", "Tamil Nadu", "Telangana", "Tripura",
-    "Uttar Pradesh", "Uttarakhand", "West Bengal",
-    "Andaman and Nicobar Islands", "Chandigarh", "Dadra and Nagar Haveli and Daman and Diu",
-    "Delhi", "Jammu and Kashmir", "Ladakh", "Lakshadweep", "Puducherry"
+    "Andhra Pradesh",
+    "Arunachal Pradesh",
+    "Assam",
+    "Bihar",
+    "Chhattisgarh",
+    "Goa",
+    "Gujarat",
+    "Haryana",
+    "Himachal Pradesh",
+    "Jharkhand",
+    "Karnataka",
+    "Kerala",
+    "Madhya Pradesh",
+    "Maharashtra",
+    "Manipur",
+    "Meghalaya",
+    "Mizoram",
+    "Nagaland",
+    "Odisha",
+    "Punjab",
+    "Rajasthan",
+    "Sikkim",
+    "Tamil Nadu",
+    "Telangana",
+    "Tripura",
+    "Uttar Pradesh",
+    "Uttarakhand",
+    "West Bengal",
+    "Andaman and Nicobar Islands",
+    "Chandigarh",
+    "Dadra and Nagar Haveli and Daman and Diu",
+    "Delhi",
+    "Jammu and Kashmir",
+    "Ladakh",
+    "Lakshadweep",
+    "Puducherry"
   ],
   "subRegions": {
     "Karnataka": [
       {
         "id": "north",
         "label": "North Karnataka",
-        "dishes": "jolada rotti (jowar flatbread), girmit, ennegayi, mirchi bajji, shenga chutney pudi"
+        "dishes": "jolada rotti (jowar flatbread), girmit, ennegayi, mirchi bajji, shenga chutney pudi",
+        "nonVegDishes": "chicken or mutton curry with jolada rotti, kheema (minced mutton) with rotti, egg curry, fried river fish",
+        "breakfasts": [
+          "jolada rotti with chutney pudi and curd",
+          "uppittu with mirchi bajji",
+          "akki rotti with chutney",
+          "shavige (vermicelli) uppittu",
+          "menthya (fenugreek) dosa with chutney",
+          "ragi rotti with palya"
+        ]
       },
       {
         "id": "south",
         "label": "South Karnataka",
-        "dishes": "ragi mudde with saaru, bisi bele bath, akki rotti, puliyogare, vangi bath"
+        "dishes": "ragi mudde with saaru, bisi bele bath, akki rotti, puliyogare, vangi bath",
+        "nonVegDishes": "natti koli saaru (country chicken curry) with ragi mudde, donne biryani, mutton or chicken kheema, chicken pepper fry, mutton chops",
+        "breakfasts": [
+          "idli with sambar and chutney",
+          "set dosa with saagu",
+          "benne masala dosa",
+          "khara bath with kesari bath",
+          "ragi rotti with coconut chutney",
+          "akki rotti with chutney",
+          "pongal with chutney"
+        ]
       },
       {
         "id": "coastal",
         "label": "Coastal Karnataka",
-        "dishes": "neer dosa, kori rotti, Mangalorean fish or chicken curry, ghee roast, patrode"
+        "dishes": "neer dosa, kori rotti, Mangalorean fish or chicken curry, ghee roast, patrode",
+        "nonVegDishes": "meen saaru (fish curry), kori rotti with chicken curry, chicken ghee roast, Kundapur chicken sukka, bangude (mackerel) fry, prawn gassi",
+        "breakfasts": [
+          "neer dosa with coconut chutney",
+          "Mangalore buns (banana puri) with chutney",
+          "idli with sambar",
+          "goli baje with chutney",
+          "patrode with ghee",
+          "kotte kadubu (steamed idli in jackfruit leaf)"
+        ]
       }
     ]
   },
   "diets": [
-    { "id": "veg", "label": "Vegetarian", "hint": "No meat, fish or eggs" },
-    { "id": "nonveg", "label": "Non-vegetarian", "hint": "Meat, fish and eggs are fine" }
+    {
+      "id": "veg",
+      "label": "Vegetarian",
+      "hint": "No meat, fish or eggs"
+    },
+    {
+      "id": "nonveg",
+      "label": "Non-vegetarian",
+      "hint": "Meat, fish and eggs are fine"
+    }
   ]
 }

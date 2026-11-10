@@ -2,6 +2,7 @@
 
 import { getRecipe } from "../api.js";
 import { setStatus, setBusy } from "../ui.js";
+import { t, tOr } from "../i18n.js";
 
 // textContent (not innerHTML) so nothing the AI writes can run as code.
 function fillList(listEl, items, format) {
@@ -17,9 +18,9 @@ function fillList(listEl, items, format) {
 function showRecipe(recipe) {
   document.getElementById("recipe-name").textContent = recipe.recipeName;
 
-  const bits = [`${recipe.servings} serving${recipe.servings === 1 ? "" : "s"}`];
-  if (recipe.cuisine) bits.push(recipe.cuisine);
-  if (recipe.timeMinutes) bits.push(`about ${recipe.timeMinutes} min`);
+  const bits = [t(recipe.servings === 1 ? "servings.one" : "servings.other", { n: recipe.servings })];
+  if (recipe.cuisine) bits.push(tOr(`cuisine.${recipe.cuisine}`, recipe.cuisine));
+  if (recipe.timeMinutes) bits.push(t("minAbout", { n: recipe.timeMinutes }));
   document.getElementById("recipe-meta").textContent = bits.join(" · ");
 
   fillList(document.getElementById("recipe-ingredients"), recipe.ingredients, (i) => `${i.quantity} ${i.name}`);
@@ -27,7 +28,7 @@ function showRecipe(recipe) {
 
   const tipEl = document.getElementById("recipe-tip");
   tipEl.hidden = !recipe.tip;
-  tipEl.textContent = recipe.tip ? `Tip: ${recipe.tip}` : "";
+  tipEl.textContent = recipe.tip ? t("recipe.tip", { x: recipe.tip }) : "";
 
   const resultEl = document.getElementById("result");
   resultEl.hidden = false;
@@ -53,12 +54,12 @@ export function initRecipeForm({ getPrefs }) {
 
     const prefs = getPrefs();
     if (!prefs) {
-      setStatus("Please answer the questions first.", true);
+      setStatus(t("cook.answerFirst"), true);
       return;
     }
 
-    setBusy(goBtn, true, "Get recipe");
-    setStatus("Thinking up a recipe…");
+    setBusy(goBtn, true, t("cook.go"));
+    setStatus(t("cook.thinking"));
     resultEl.hidden = true;
 
     try {
@@ -75,7 +76,7 @@ export function initRecipeForm({ getPrefs }) {
     } catch (err) {
       setStatus(err.message, true);
     } finally {
-      setBusy(goBtn, false, "Get recipe");
+      setBusy(goBtn, false, t("cook.go"));
     }
   });
 }

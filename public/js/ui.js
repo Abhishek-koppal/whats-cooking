@@ -1,5 +1,7 @@
 // Small helpers shared by all features.
 
+import { t } from "./i18n.js";
+
 export function setStatus(message, isError = false) {
   const statusEl = document.getElementById("status");
   statusEl.textContent = message;
@@ -8,7 +10,7 @@ export function setStatus(message, isError = false) {
 
 export function setBusy(button, busy, idleText) {
   button.disabled = busy;
-  button.textContent = busy ? "Thinking…" : idleText;
+  button.textContent = busy ? t("cook.busy") : idleText;
 }
 
 // Builds an element safely (text is added as text, never as HTML).

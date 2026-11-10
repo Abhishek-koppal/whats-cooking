@@ -5,6 +5,7 @@
 
 import { el } from "../ui.js";
 import { icon } from "../icons.js";
+import { t } from "../i18n.js";
 
 export const FEATURES = [
   { id: "home", label: "Home", icon: "home", view: "home" },
@@ -27,7 +28,7 @@ export function renderNav(container, { active = "home", onPick }) {
           on: { click: () => onPick(feature) },
         },
         icon(feature.icon),
-        el("span", { text: feature.label })
+        el("span", { text: t(`nav.${feature.id}`) })
       )
     )
   );
@@ -36,13 +37,13 @@ export function renderNav(container, { active = "home", onPick }) {
 // The page for a feature that is not built yet.
 export function renderSoon(container, feature, { onBack }) {
   container.replaceChildren(
-    el("button", { className: "link back", text: "← Home", attrs: { type: "button" }, on: { click: onBack } }),
+    el("button", { className: "link back", text: t("back.home"), attrs: { type: "button" }, on: { click: onBack } }),
     el(
       "div",
       { className: "soon" },
       icon(feature.icon, 56),
-      el("h2", { text: feature.label }),
-      el("p", { className: "lead", text: "Coming soon. We're still building this part." })
+      el("h2", { text: t(`nav.${feature.id}`) }),
+      el("p", { className: "lead", text: t("soon.text") })
     )
   );
 }

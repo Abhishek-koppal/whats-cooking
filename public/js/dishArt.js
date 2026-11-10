@@ -3,8 +3,15 @@
 // dish it is ("dal", "flatbread"...) and the phone picks the picture.
 
 import { el } from "./ui.js";
+import { t } from "./i18n.js";
 
-export const SLOT_LABEL = { breakfast: "Breakfast", lunch: "Lunch", dinner: "Dinner" };
+// The name of a meal slot in the current language (read it as SLOT_LABEL.lunch, or SLOT_LABEL[slot]).
+export const SLOT_LABEL = {
+  get breakfast() { return t("slot.breakfast"); },
+  get lunch() { return t("slot.lunch"); },
+  get snacks() { return t("slot.snacks"); },
+  get dinner() { return t("slot.dinner"); },
+};
 
 const EMOJI = {
   rice: "🍚",
@@ -19,6 +26,8 @@ const EMOJI = {
   salad: "🥗",
   sweet: "🍮",
   sandwich: "🥪",
+  fruit: "🍎",
+  drink: "🥤",
   plate: "🍽️",
 };
 

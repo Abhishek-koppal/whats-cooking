@@ -62,11 +62,19 @@ Run the tests with `pytest`. They use a fake Gemini, so they cost no quota.
 
 If opening the link in a private window asks you to log in to Vercel, turn off "Vercel Authentication" in the project's Settings → Deployment Protection.
 
+## Layout, languages and text size
+
+- **Any screen:** the layout adapts to the width of the page (CSS container queries). Phones get one column; laptops get a roomier two-column view for recipes. Text size is part of that, so large text never breaks the layout.
+- **Logo:** tapping "Rasoi." always returns to the home screen.
+- **Languages:** English, Hindi and Kannada, picked from the dropdown in the header. The choice is saved, and the AI writes the menu and recipes in that language. Each language gets its own menu per day (one AI call per language per day), then it is saved. Hindi/Kannada take a little longer. State names stay in English.
+- **Text size:** the "Aa" button opens a slider (80% to 160%) with a Reset button.
+- **Add a language:** add `public/js/i18n/<code>.js`, register it in `public/js/i18n.js`, add the file to `SHELL` in `public/sw.js` (and bump the cache number), and add the code to `LANGUAGES` in `backend/common.py`.
+
 ## Today's menu and your quota
 
 The home screen shows breakfast, lunch and dinner for the day. To keep Gemini use low:
 
-- **One request per person per day** plans all three meals, with full recipes. It is saved on the phone, so opening the app again, or tapping "View today's recipes", costs nothing.
+- **One request per person per day** plans the whole day (breakfast, lunch, snacks, dinner), with full recipes. It is saved on the phone, so opening the app again, or tapping "View today's recipes", costs nothing.
 - A new request is made only when the day changes, when the answers (state, diet, people) change, or when "Suggest a different menu" is tapped (2 times a day on a phone).
 - The last few days' dish names are sent along so the menu changes from day to day.
 - Dish pictures are emoji tiles drawn by the phone, so no images are generated or downloaded.

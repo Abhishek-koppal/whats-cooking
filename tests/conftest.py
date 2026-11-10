@@ -15,6 +15,7 @@ def sent(monkeypatch):
     class Spy:
         calls: list = []
         reply = None  # a Response, or an Exception to raise
+        first = None  # if set, used for the first call only (to test the retry)
 
         @property
         def last(self):
@@ -28,13 +29,17 @@ def sent(monkeypatch):
     spy.calls = []
     spy.reply = gemini_ok()
 
-    async def fake_post(url, headers, payload):
-        spy.calls.append({"url": url, "headers": headers, "payload": payload})
-        if isinstance(spy.reply, Exception):
-            raise spy.reply
-        return spy.reply
+    async def fake_post(url, headers, payload, timeout=None):
+        spy.calls.append({"url": url, "headers": headers, "payload": payload, "timeout": timeout})
+        answer = spy.reply
+        if spy.first is not None and len(spy.calls) == 1:
+            answer = spy.first
+        if isinstance(answer, Exception):
+            raise answer
+        return answer
 
     monkeypatch.setattr(gemini, "_post", fake_post)
+    monkeypatch.setattr(gemini, "RETRY_DELAY_SECONDS", 0)  # no waiting in tests
     monkeypatch.setenv("GEMINI_API_KEY", "test-key")
     monkeypatch.delenv("GEMINI_MODEL", raising=False)
     return spy

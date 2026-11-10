@@ -8,6 +8,7 @@
 import { STATES, OTHER_STATE, DIETS, subRegionsOf } from "../data/regions.js";
 import { DEFAULT_PEOPLE, MIN_PEOPLE, MAX_PEOPLE, isValidPeople } from "../prefs.js";
 import { el } from "../ui.js";
+import { t, tOr } from "../i18n.js";
 
 export function startOnboarding({ container, initial = null, onDone, onCancel }) {
   const answers = {
@@ -43,10 +44,10 @@ export function startOnboarding({ container, initial = null, onDone, onCancel })
   function stateQuestion() {
     const select = el(
       "select",
-      { attrs: { "aria-label": "Your state" } },
-      el("option", { text: "Choose your state", attrs: { value: "" } }),
+      { attrs: { "aria-label": t("q.state.aria") } },
+      el("option", { text: t("q.state.choose"), attrs: { value: "" } }),
       ...STATES.map((s) => el("option", { text: s, attrs: { value: s } })),
-      el("option", { text: OTHER_STATE, attrs: { value: OTHER_STATE } })
+      el("option", { text: t("other.state"), attrs: { value: OTHER_STATE } })
     );
     select.value = answers.state ?? "";
     select.addEventListener("change", () => {
@@ -81,7 +82,7 @@ export function startOnboarding({ container, initial = null, onDone, onCancel })
   // "−  4  +" for the number of people
   function peopleQuestion() {
     const input = el("input", {
-      attrs: { type: "number", min: String(MIN_PEOPLE), max: String(MAX_PEOPLE), inputmode: "numeric", "aria-label": "Number of people" },
+      attrs: { type: "number", min: String(MIN_PEOPLE), max: String(MAX_PEOPLE), inputmode: "numeric", "aria-label": t("q.people.aria") },
     });
     input.value = String(answers.people);
 
@@ -99,9 +100,9 @@ export function startOnboarding({ container, initial = null, onDone, onCancel })
     return el(
       "div",
       { className: "stepper" },
-      el("button", { text: "−", attrs: { type: "button", "aria-label": "One less person" }, on: { click: () => set((answers.people ?? DEFAULT_PEOPLE) - 1) } }),
+      el("button", { text: "−", attrs: { type: "button", "aria-label": t("q.people.less") }, on: { click: () => set((answers.people ?? DEFAULT_PEOPLE) - 1) } }),
       input,
-      el("button", { text: "+", attrs: { type: "button", "aria-label": "One more person" }, on: { click: () => set((answers.people ?? DEFAULT_PEOPLE) + 1) } })
+      el("button", { text: "+", attrs: { type: "button", "aria-label": t("q.people.more") }, on: { click: () => set((answers.people ?? DEFAULT_PEOPLE) + 1) } })
     );
   }
 
@@ -112,30 +113,32 @@ export function startOnboarding({ container, initial = null, onDone, onCancel })
 
     let title, subtitle, body;
     if (step === "state") {
-      title = "Which state are you from?";
-      subtitle = "I'll suggest the kind of food you grew up with.";
+      title = t("q.state.title");
+      subtitle = t("q.state.sub");
       body = stateQuestion();
     } else if (step === "region") {
-      title = `Which part of ${answers.state}?`;
-      subtitle = "Food changes from region to region.";
+      title = t("q.region.title", { state: answers.state });
+      subtitle = t("q.region.sub");
       body = choiceQuestion(
-        subRegionsOf(answers.state).map((r) => ({ id: r.id, label: r.label })),
+        subRegionsOf(answers.state).map((r) => ({ id: r.id, label: tOr(`region.${r.id}`, r.label) })),
         answers.region,
         (id) => (answers.region = id)
       );
     } else if (step === "diet") {
-      title = "Vegetarian or non-vegetarian?";
-      subtitle = "I'll only suggest food that fits.";
-      body = choiceQuestion(DIETS, answers.diet, (id) => (answers.diet = id));
+      title = t("q.diet.title");
+      subtitle = t("q.diet.sub");
+      body = choiceQuestion(
+        DIETS.map((d) => ({ id: d.id, label: tOr(`diet.${d.id}`, d.label), hint: tOr(`diet.${d.id}.hint`, d.hint) })),
+        answers.diet, (id) => (answers.diet = id));
     } else {
-      title = "How many people do you cook for?";
-      subtitle = "I'll scale the quantities for your family.";
+      title = t("q.people.title");
+      subtitle = t("q.people.sub");
       body = peopleQuestion();
     }
 
     nextBtn = el("button", {
       className: "primary",
-      text: isLast ? "Start cooking" : "Next",
+      text: isLast ? t("q.start") : t("q.next"),
       attrs: { type: "button" },
       on: { click: () => go(1) },
     });
@@ -146,7 +149,7 @@ export function startOnboarding({ container, initial = null, onDone, onCancel })
       nav.append(
         el("button", {
           className: "secondary",
-          text: position > 0 ? "Back" : "Cancel",
+          text: position > 0 ? t("q.back") : t("q.cancel"),
           attrs: { type: "button" },
           on: { click: () => go(-1) },
         })
@@ -158,4 +161,5 @@ export function startOnboarding({ container, initial = null, onDone, onCancel })
   }
 
   render();
+  return { rerender: render }; // main.js calls this when the language is switched
 }

@@ -1,3 +1,5 @@
+import { tOr } from "../i18n.js";
+
 // States, regions and diets for the browser.
 // The list itself lives in /data/regions.json, which the Python server reads too,
 // so there is only one list to edit. To add a follow-up question for another state,
@@ -40,5 +42,5 @@ export function isKnownDiet(id) {
 export function describeRegion(state, regionId) {
   if (state === OTHER_STATE) return "";
   const sub = findSubRegion(state, regionId);
-  return sub ? sub.label : state;
+  return sub ? tOr(`region.${sub.id}`, sub.label) : state;
 }

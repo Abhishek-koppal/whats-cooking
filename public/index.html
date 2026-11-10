@@ -14,9 +14,28 @@
 <body>
   <main>
     <header class="top">
-      <h1>Rasoi</h1>
-      <!-- Bigger text on/off (js/features/textSize.js) -->
-      <button type="button" id="text-size" class="size-btn" aria-pressed="false" aria-label="Bigger text">Aa</button>
+      <!-- The name is a button: tapping it goes back to the home screen (js/main.js) -->
+      <h1><button type="button" id="logo" class="logo" data-i18n-aria="logo.home">Rasoi</button></h1>
+
+      <div class="tools">
+        <!-- Language picker: filled in by js/main.js from js/i18n.js -->
+        <select id="lang" class="lang-select" data-i18n-aria="lang.label"></select>
+
+        <!-- Text size slider (js/features/textSize.js) -->
+        <button type="button" id="text-size" class="size-btn" aria-expanded="false" aria-controls="size-panel" data-i18n-aria="size.open">Aa</button>
+        <div id="size-panel" class="size-panel" hidden>
+          <p class="eyebrow" data-i18n="size.title">Text size</p>
+          <div class="size-row">
+            <span class="a-small" aria-hidden="true">A</span>
+            <input type="range" id="size-range" min="80" max="160" step="5" value="100" data-i18n-aria="size.title">
+            <span class="a-big" aria-hidden="true">A</span>
+          </div>
+          <div class="size-foot">
+            <output id="size-value" for="size-range">100%</output>
+            <button type="button" id="size-reset" class="link" data-i18n="size.reset">Normal size</button>
+          </div>
+        </div>
+      </div>
     </header>
 
     <!-- The questions (filled in by js/features/onboarding.js) -->
@@ -29,7 +48,7 @@
 
       <div class="prefs-bar">
         <span id="prefs-summary"></span>
-        <button type="button" id="change-prefs" class="link">Change</button>
+        <button type="button" id="change-prefs" class="link" data-i18n="prefs.change">Change</button>
       </div>
 
       <!-- Today's menu (js/features/today.js) -->
@@ -43,30 +62,30 @@
 
       <!-- Recipe from the ingredients you have (js/features/recipe.js) -->
       <section id="cook" hidden>
-        <button type="button" id="back-home" class="link back">← Home</button>
-        <h2>Cook with what I have</h2>
-        <p class="lead">Tell me what you have at home and I'll suggest a recipe.</p>
+        <button type="button" id="back-home" class="link back" data-i18n="back.home">← Home</button>
+        <h2 data-i18n="cook.title">Cook with what I have</h2>
+        <p class="lead" data-i18n="cook.lead">Tell me what you have at home and I'll suggest a recipe.</p>
 
         <form id="form">
-          <label for="ingredients">Ingredients you have</label>
+          <label for="ingredients" data-i18n="cook.ingredients">Ingredients you have</label>
           <textarea id="ingredients" rows="3" maxlength="300"
-            placeholder="For example: rice, water, salt, egg" required></textarea>
+            placeholder="For example: rice, water, salt, egg" data-i18n-placeholder="cook.placeholder" required></textarea>
 
-          <label for="servings">How many servings?</label>
+          <label for="servings" data-i18n="cook.servings">How many servings?</label>
           <div class="stepper">
-            <button type="button" id="minus" aria-label="One less serving">−</button>
+            <button type="button" id="minus" aria-label="One less serving" data-i18n-aria="cook.less">−</button>
             <input id="servings" type="number" value="2" min="1" max="12" inputmode="numeric" required>
-            <button type="button" id="plus" aria-label="One more serving">+</button>
+            <button type="button" id="plus" aria-label="One more serving" data-i18n-aria="cook.more">+</button>
           </div>
 
-          <label for="cuisine">Type of food</label>
+          <label for="cuisine" data-i18n="cook.cuisine">Type of food</label>
           <select id="cuisine">
-            <option value="Indian">Indian</option>
-            <option value="Continental">Continental</option>
-            <option value="Chinese">Chinese</option>
+            <option value="Indian" data-i18n="cuisine.Indian">Indian</option>
+            <option value="Continental" data-i18n="cuisine.Continental">Continental</option>
+            <option value="Chinese" data-i18n="cuisine.Chinese">Chinese</option>
           </select>
 
-          <button type="submit" id="go" class="primary">Get recipe</button>
+          <button type="submit" id="go" class="primary" data-i18n="cook.go">Get recipe</button>
         </form>
 
         <p id="status" role="status" aria-live="polite"></p>
@@ -75,11 +94,11 @@
           <h2 id="recipe-name"></h2>
           <p id="recipe-meta" class="meta"></p>
 
-          <h3>What you need</h3>
+          <h3 data-i18n="recipe.need">What you need</h3>
           <ul id="recipe-ingredients"></ul>
 
-          <h3>How to make it</h3>
-          <ol id="recipe-steps"></ol>
+          <h3 data-i18n="recipe.how">How to make it</h3>
+          <ol id="recipe-steps" class="steps"></ol>
 
           <p id="recipe-tip" class="tip" hidden></p>
         </section>

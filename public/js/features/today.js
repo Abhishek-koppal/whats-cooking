@@ -1,20 +1,21 @@
 // Feature: the "Today's menu" home screen and the recipes view.
 //
-// Cost control: the menu is asked from the AI ONCE per day (all three meals with full recipes in
+// Cost control: the menu is asked from the AI ONCE per day (all four items (breakfast, lunch, snacks, dinner) with full recipes in
 // one request) and saved on the phone. Opening the app again, or tapping "View today's recipes",
 // shows the saved copy and uses no AI quota. Only "Suggest a different menu" asks again, and
 // that is limited to a couple of times a day.
 
 import { getPlan } from "../api.js";
 import { el } from "../ui.js";
+import { t, getLang, getLocale, difficultyText } from "../i18n.js";
 import { SLOT_LABEL, dishTile } from "../dishArt.js";
 import { loadPlan, savePlan, recentDishes, recordDishes, MAX_CHANGES_PER_DAY } from "../planStore.js";
 
 export function greetingFor(now = new Date()) {
   const hour = now.getHours();
-  if (hour < 12) return { text: "Good morning!", icon: "☀️" };
-  if (hour < 17) return { text: "Good afternoon!", icon: "🌤️" };
-  return { text: "Good evening!", icon: "🌙" };
+  if (hour < 12) return { text: t("greeting.morning"), icon: "☀️" };
+  if (hour < 17) return { text: t("greeting.afternoon"), icon: "🌤️" };
+  return { text: t("greeting.evening"), icon: "🌙" };
 }
 
 // Which meal is coming up, by the time of day.
@@ -22,10 +23,11 @@ export function nextSlotFor(now = new Date()) {
   const hour = now.getHours();
   if (hour < 10) return "breakfast";
   if (hour < 15) return "lunch";
+  if (hour < 18) return "snacks";
   return "dinner";
 }
 
-const metaOf = (meal) => [meal.timeMinutes ? `${meal.timeMinutes} min` : "", meal.difficulty].filter(Boolean).join(" · ");
+const metaOf = (meal) => [meal.timeMinutes ? t("min", { n: meal.timeMinutes }) : "", difficultyText(meal.difficulty)].filter(Boolean).join(" · ");
 
 const textButton = (text, onClick) =>
   el("button", { className: "link", text, attrs: { type: "button" }, on: { click: onClick } });
@@ -49,10 +51,10 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
 
   function renderError(message) {
     homeEl.replaceChildren(
-      el("h2", { text: "Couldn't plan today's menu" }),
+      el("h2", { text: t("today.failed") }),
       el("p", { className: "error", text: message, attrs: { role: "alert" } }),
-      el("button", { className: "primary", text: "Try again", attrs: { type: "button" }, on: { click: () => generate(0) } }),
-      el("div", { className: "home-links" }, textButton("Cook with what I have", () => go("cook")))
+      el("button", { className: "primary", text: t("today.tryAgain"), attrs: { type: "button" }, on: { click: () => generate(0) } }),
+      el("div", { className: "home-links" }, textButton(t("today.cookWith"), () => go("cook")))
     );
   }
 
@@ -82,7 +84,7 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
                 "span",
                 { className: "meal-head" },
                 el("span", { className: "meal-slot", text: SLOT_LABEL[meal.slot] }),
-                meal.slot === upNext ? el("span", { className: "tag", text: "Up next" }) : ""
+                meal.slot === upNext ? el("span", { className: "tag", text: t("today.upNext") }) : ""
               ),
               el("span", { className: "meal-name", text: meal.name }),
               el("span", { className: "meal-meta", text: metaOf(meal) })
@@ -100,28 +102,28 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
           "div",
           {},
           el("h2", { text: greet.text }),
-          el("p", { className: "meta", text: `${now.toLocaleDateString(undefined, { weekday: "long" })} · Let's make something delicious` })
+          el("p", { className: "meta", text: `${now.toLocaleDateString(getLocale(), { weekday: "long" })} · ${t("today.tagline")}` })
         ),
         el("span", { className: "chef", text: "🧑‍🍳", attrs: { "aria-hidden": "true" } })
       ),
       el(
         "div",
         { className: "plan-box" },
-        el("p", { className: "eyebrow", text: "TODAY'S COOKING PLAN" }),
-        el("h3", { text: family ? "Your family menu is ready!" : "Your menu is ready!" }),
-        el("p", { text: `We've planned three meals based on your ${family ? "family's " : ""}preferences.` })
+        el("p", { className: "eyebrow", text: t("today.eyebrow") }),
+        el("h3", { text: family ? t("today.readyFamily") : t("today.readySingle") }),
+        el("p", { text: family ? t("today.textFamily") : t("today.textSingle") })
       ),
-      el("h3", { className: "section-title", text: "Today's meals" }),
+      el("h3", { className: "section-title", text: t("today.meals") }),
       list,
-      el("button", { className: "primary dark", text: "View today's recipes", attrs: { type: "button" }, on: { click: () => go("recipes") } }),
+      el("button", { className: "primary dark", text: t("today.viewRecipes"), attrs: { type: "button" }, on: { click: () => go("recipes") } }),
       notice ? el("p", { className: "error", text: notice, attrs: { role: "alert" } }) : "",
       el(
         "div",
         { className: "home-links" },
         left > 0
-          ? textButton(`Suggest a different menu (${left} left today)`, () => generate(changes + 1))
-          : el("span", { className: "home-note", text: "That's all the menu changes for today." }),
-        textButton("Cook with what I have", () => go("cook"))
+          ? textButton(t("today.another", { n: left }), () => generate(changes + 1))
+          : el("span", { className: "home-note", text: t("today.noMore") }),
+        textButton(t("today.cookWith"), () => go("cook"))
       )
     );
   }
@@ -149,18 +151,19 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
         el(
           "div",
           { className: "recipe-body" },
-          el("h4", { text: "What you need" }),
+          meal.servedWith ? el("p", { className: "serve", text: t("recipe.serveWith", { x: meal.servedWith.replace(/^serve(d)? with\s+/i, "") }) }) : "",
+          el("h4", { text: t("recipe.need") }),
           el("ul", {}, ...meal.ingredients.map((i) => el("li", { text: [i.quantity, i.name].filter(Boolean).join(" ") }))),
-          el("h4", { text: "How to make it" }),
-          el("ol", {}, ...meal.steps.map((step) => el("li", { text: step }))),
-          meal.tip ? el("p", { className: "tip", text: `Tip: ${meal.tip}` }) : ""
+          el("h4", { text: t("recipe.how") }),
+          el("ol", { className: "steps" }, ...meal.steps.map((step) => el("li", { text: step }))),
+          meal.tip ? el("p", { className: "tip", text: t("recipe.tip", { x: meal.tip }) }) : ""
         )
       )
     );
 
     recipesEl.replaceChildren(
-      el("button", { className: "link back", text: "← Today's menu", attrs: { type: "button" }, on: { click: () => go("home") } }),
-      el("h2", { text: "Today's recipes" }),
+      el("button", { className: "link back", text: t("recipes.back"), attrs: { type: "button" }, on: { click: () => go("home") } }),
+      el("h2", { text: t("recipes.title") }),
       ...cards
     );
     recipesEl.querySelector("details[open]")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
@@ -171,9 +174,11 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
     if (busy) return;
     busy = true;
     const hadMenu = meals !== null && newChanges > 0;
-    renderLoading(hadMenu ? "Finding a different menu…" : "Planning today's menu…");
+    renderLoading(hadMenu ? t("today.finding") : t("today.planning"));
 
     const prefs = getPrefs();
+    const lang = getLang(); // the language this menu is made in, even if the person switches meanwhile
+    const planKey = { ...prefs, lang };
     try {
       const data = await getPlan({
         state: prefs.state,
@@ -182,10 +187,15 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
         people: prefs.people,
         avoid: recentDishes(), // yesterday's dishes (and today's, when re-making), so it changes
       });
+      savePlan(planKey, data.meals, newChanges);
+      recordDishes(data.meals.map((m) => m.name));
+      if (getLang() !== lang) {
+        // the language was switched while waiting: this menu is saved for later, now show the right language
+        busy = false;
+        return await showHome(); // (await, so the "finally" below does not reset busy too early)
+      }
       meals = data.meals;
       changes = newChanges;
-      savePlan(prefs, meals, changes);
-      recordDishes(meals.map((m) => m.name));
       renderHome();
     } catch (err) {
       if (hadMenu) renderHome(err.message); // keep showing the menu we already had
@@ -196,7 +206,7 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
   }
 
   async function showHome() {
-    const saved = loadPlan(getPrefs());
+    const saved = loadPlan({ ...getPrefs(), lang: getLang() });
     if (saved) {
       meals = saved.meals;
       changes = saved.changes;

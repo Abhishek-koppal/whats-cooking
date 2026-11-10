@@ -3,7 +3,7 @@
 //
 // WHEN YOU ADD A NEW FRONTEND FILE: add it to SHELL below and bump the CACHE number.
 
-const CACHE = "rasoi-v6";
+const CACHE = "rasoi-v10";
 const SHELL = [
   "/",
   "/style.css",
@@ -23,6 +23,10 @@ const SHELL = [
   "/js/features/today.js",
   "/js/features/nav.js",
   "/js/features/textSize.js",
+  "/js/i18n.js",
+  "/js/i18n/en.js",
+  "/js/i18n/hi.js",
+  "/js/i18n/kn.js",
 ];
 
 self.addEventListener("install", (event) => {
