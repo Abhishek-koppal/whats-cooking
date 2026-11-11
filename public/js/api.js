@@ -33,3 +33,4 @@ async function postJson(url, payload) {
 export const getRecipe = (payload) => postJson("/api/recipe", payload);
 export const getPlan = (payload) => postJson("/api/plan", payload);
 export const getWeek = (payload) => postJson("/api/week", payload);
+export const getShopping = (payload) => postJson("/api/shopping", payload);

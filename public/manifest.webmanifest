@@ -1,11 +1,11 @@
 {
   "name": "Rasoi",
   "short_name": "Rasoi",
-  "description": "Your kitchen helper: daily menu, recipes and more.",
+  "description": "Your kitchen helper: weekly meal plan, recipes and shopping list.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#fdfdfb",
+  "background_color": "#f6f4f0",
   "theme_color": "#46593a",
   "icons": [
     { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

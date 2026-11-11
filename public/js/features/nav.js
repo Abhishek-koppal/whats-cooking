@@ -12,7 +12,7 @@ export const FEATURES = [
   { id: "meal-plan", label: "Meal plan", icon: "calendar", view: "mealplan" },
   { id: "recipes", label: "Recipes", icon: "chef", view: "cook" }, // for now: a recipe from what you have
   { id: "fridge", label: "My fridge", icon: "fridge", view: "soon" },
-  { id: "shopping", label: "Shopping", icon: "cart", view: "soon" },
+  { id: "shopping", label: "Shopping", icon: "cart", view: "shopping" },
   { id: "family", label: "My family", icon: "users", view: "soon" },
 ];
 

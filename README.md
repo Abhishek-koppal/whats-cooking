@@ -15,6 +15,7 @@ Phone (public/)  ──►  /api/recipe (backend/recipe.py)  ──►  Gemini
 app.py                 creates the backend and plugs in the features
 backend/
   plan.py              recipes for a day (/api/plan); with `dishes` it writes recipes for the weekly plan's dishes
+  shopping.py          the weekly shopping list (/api/shopping): the plan's dishes added up into one list
   week.py              the weekly meal plan (/api/week): breakfast, lunch, snacks and dinner for 7 days in ONE request, no repeats of similar dishes
   recipe.py            recipe from the ingredients you have (/api/recipe)
   common.py            shared checks and prompt rules (diet, home region)
@@ -106,3 +107,11 @@ Until the limits are added, keep the link private.
 - **No similar meals close together:** every dish gets a "family" from a fixed list (`FAMILIES` in `backend/week.py`), so macaroni and spaghetti are both `pasta`. A family may not repeat on the same or the next day (whichever meal it is) and appears at most twice a week; the first day of a new week avoids the last day of the old one; breakfast-only and snack-only dishes stay in their slot; veg plans get no non-veg families; at least 6 of the 14 lunches and dinners are your home region's food.
 - **Checked by the server:** if a rule is broken, Gemini is asked once more with the exact problems listed, and the better answer is used.
 - **Tuning:** `MIN_DAY_GAP`, `MAX_PER_FAMILY`, `MIN_REGIONAL`, `MAX_PER_CUISINE`, `FAMILY_BASE` at the top of `backend/week.py`.
+
+## Shopping list
+
+- **Made from the weekly plan:** the dishes of the days still to come are sent to Gemini ONCE (`/api/shopping`), which adds the ingredients up into one list (the same ingredient from many dishes is one line with the total, sized for your household). It appears by itself the first time the Shopping screen is opened after a plan exists; opening it again costs nothing.
+- **Saved on the phone** (`shoppingStore.js`): the list, what is ticked off and the person's own extra items survive reloads. If the plan is made again, the old list no longer fits and a new one is made (ticks that still match are kept). Asking for a list is limited to 3 a day, counted before the request.
+- **Copy shopping list** copies what is still to buy (everything, if all is ticked), grouped like a shop.
+- **Diet:** a vegetarian list never keeps meat, fish or eggs, whatever the AI wrote (`clean_items` in `backend/shopping.py`).
+- **Icons:** the favicon and app icons come from the Rasoi chef-hat "R." logo (`favicon.ico`, `favicon-32.png`, `favicon-64.png`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`).
