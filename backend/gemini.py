@@ -55,14 +55,16 @@ def _final_error(kind: str) -> "GeminiError":
     return GeminiError(502, "The recipe service had a problem. Please try again.")
 
 
-async def _send_with_one_retry(url: str, headers: dict, payload: dict, timeout: float) -> httpx.Response:
+async def _send_with_one_retry(
+    url: str, headers: dict, payload: dict, timeout: float, total_budget: float = TOTAL_BUDGET_SECONDS
+) -> httpx.Response:
     """Sends the request. A timeout, a network hiccup or a Gemini 5xx is tried once more, if there is time left."""
     started = time.monotonic()
     for attempt in (1, 2):
         failure = None  # "timeout", "network" or "status" when this try did not work
         response = None
         try:
-            response = await _post(url, headers, payload, max(1.0, min(timeout, TOTAL_BUDGET_SECONDS - (time.monotonic() - started))))
+            response = await _post(url, headers, payload, max(1.0, min(timeout, total_budget - (time.monotonic() - started))))
         except httpx.TimeoutException:
             log.error("Gemini request timed out (attempt %s)", attempt)
             failure = "timeout"
@@ -76,7 +78,7 @@ async def _send_with_one_retry(url: str, headers: dict, payload: dict, timeout: 
 
         if failure is None:
             return response
-        time_left = TOTAL_BUDGET_SECONDS - (time.monotonic() - started) - RETRY_DELAY_SECONDS
+        time_left = total_budget - (time.monotonic() - started) - RETRY_DELAY_SECONDS
         if attempt == 2 or time_left < MIN_TIME_FOR_RETRY:
             if failure == "status":
                 return response  # let the caller turn it into the friendly error
@@ -85,8 +87,13 @@ async def _send_with_one_retry(url: str, headers: dict, payload: dict, timeout: 
     raise AssertionError("unreachable")
 
 
-async def generate_json(prompt: str, schema: dict, temperature: float = 0.7, slow: bool = False) -> dict:
-    """Ask Gemini for an answer in the JSON shape described by `schema`. slow=True gives it longer (for Hindi, Kannada)."""
+async def generate_json(
+    prompt: str, schema: dict, temperature: float = 0.7, slow: bool = False, budget: float | None = None
+) -> dict:
+    """Ask Gemini for an answer in the JSON shape described by `schema`. slow=True gives it longer (for Hindi, Kannada).
+
+    budget (seconds) caps the whole call, retry included, for callers that may make a second call inside Vercel's limit.
+    """
     url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name()}:generateContent"
     headers = {
         "Content-Type": "application/json",
@@ -102,7 +109,9 @@ async def generate_json(prompt: str, schema: dict, temperature: float = 0.7, slo
         },
     }
 
-    response = await _send_with_one_retry(url, headers, payload, SLOW_TIMEOUT_SECONDS if slow else TIMEOUT_SECONDS)
+    total = TOTAL_BUDGET_SECONDS if budget is None else budget
+    timeout = min(SLOW_TIMEOUT_SECONDS if slow else TIMEOUT_SECONDS, total)
+    response = await _send_with_one_retry(url, headers, payload, timeout, total)
 
     if response.status_code == 429:
         raise GeminiError(429, "Too many requests right now. Please wait a minute and try again.")

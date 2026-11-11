@@ -1,15 +1,19 @@
-// Feature: the "Today's menu" home screen and the recipes view.
+// Feature: the "Today" home screen and the recipes view.
 //
-// Cost control: the menu is asked from the AI ONCE per day (all four items (breakfast, lunch, snacks, dinner) with full recipes in
-// one request) and saved on the phone. Opening the app again, or tapping "View today's recipes",
-// shows the saved copy and uses no AI quota. Only "Suggest a different menu" asks again, and
-// that is limited to a couple of times a day.
+// The weekly plan (features/mealplan.js, weekStore.js) is the ONE source of what is cooked. Today's four meals
+// here are today's row of that plan, so this screen and the Meal plan screen always agree. If there is no plan
+// yet, one is made (once, for the whole week) when the app opens.
+//
+// Cost control: opening the app costs no AI quota once the week is saved. Recipes are written on demand, once a
+// day, for exactly the four dishes of today (the first time "View today's recipes" or a meal is tapped).
 
 import { getPlan } from "../api.js";
 import { el } from "../ui.js";
 import { t, getLang, getLocale, difficultyText } from "../i18n.js";
 import { SLOT_LABEL, dishTile } from "../dishArt.js";
-import { loadPlan, savePlan, recentDishes, recordDishes, MAX_CHANGES_PER_DAY } from "../planStore.js";
+import { loadRecipes, saveRecipes, todayKey } from "../planStore.js";
+import { loadWeek, todaysMeals, plansLeft } from "../weekStore.js";
+import { requestWeek } from "../weekService.js";
 
 export function greetingFor(now = new Date()) {
   const hour = now.getHours();
@@ -27,6 +31,7 @@ export function nextSlotFor(now = new Date()) {
   return "dinner";
 }
 
+// The weekly plan knows the time; the difficulty only comes with the recipe.
 const metaOf = (meal) => [meal.timeMinutes ? t("min", { n: meal.timeMinutes }) : "", difficultyText(meal.difficulty)].filter(Boolean).join(" · ");
 
 const textButton = (text, onClick) =>
@@ -34,9 +39,12 @@ const textButton = (text, onClick) =>
 
 // homeEl / recipesEl are the two screens; go(view, arg) is main.js's way of switching screens.
 export function initToday({ homeEl, recipesEl, getPrefs, go }) {
-  let meals = null;
-  let changes = 0;
-  let busy = false;
+  let meals = null; // today's meals, from the weekly plan
+  let busy = false; // a weekly plan is being made
+  let recipesBusy = false;
+  let autoTriedFor = ""; // one automatic try per language and day, so a failing server is not asked again and again
+
+  const back = () => el("button", { className: "link back", text: t("recipes.back"), attrs: { type: "button" }, on: { click: () => go("home") } });
 
   function renderLoading(text) {
     homeEl.replaceChildren(
@@ -53,18 +61,39 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
     homeEl.replaceChildren(
       el("h2", { text: t("today.failed") }),
       el("p", { className: "error", text: message, attrs: { role: "alert" } }),
-      el("button", { className: "primary", text: t("today.tryAgain"), attrs: { type: "button" }, on: { click: () => generate(0) } }),
+      el("button", { className: "primary", text: t("today.tryAgain"), attrs: { type: "button" }, on: { click: generate } }),
       el("div", { className: "home-links" }, textButton(t("today.cookWith"), () => go("cook")))
     );
   }
 
-  function renderHome(notice = "") {
+  // No plan (and none is being made): explain, and offer the button.
+  function renderNoPlan() {
+    const now = new Date();
+    homeEl.replaceChildren(
+      el(
+        "div",
+        { className: "today-head" },
+        el(
+          "div",
+          {},
+          el("h2", { text: greetingFor(now).text }),
+          el("p", { className: "meta", text: `${now.toLocaleDateString(getLocale(), { weekday: "long" })} · ${t("today.tagline")}` })
+        )
+      ),
+      el("div", { className: "plan-box" }, el("p", { className: "eyebrow", text: t("today.eyebrow") }), el("h3", { text: t("week.title") }), el("p", { text: t("week.empty") })),
+      plansLeft() > 0
+        ? el("button", { className: "primary dark", text: t("week.plan"), attrs: { type: "button" }, on: { click: generate } })
+        : el("p", { className: "home-note", text: t("week.noMore") }),
+      el("div", { className: "home-links" }, textButton(t("today.cookWith"), () => go("cook")))
+    );
+  }
+
+  function renderHome() {
     const now = new Date();
     const prefs = getPrefs();
     const greet = greetingFor(now);
     const family = prefs.people > 1;
     const upNext = nextSlotFor(now);
-    const left = MAX_CHANGES_PER_DAY - changes;
 
     const list = el(
       "ul",
@@ -116,23 +145,16 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
       el("h3", { className: "section-title", text: t("today.meals") }),
       list,
       el("button", { className: "primary dark", text: t("today.viewRecipes"), attrs: { type: "button" }, on: { click: () => go("recipes") } }),
-      notice ? el("p", { className: "error", text: notice, attrs: { role: "alert" } }) : "",
-      el(
-        "div",
-        { className: "home-links" },
-        left > 0
-          ? textButton(t("today.another", { n: left }), () => generate(changes + 1))
-          : el("span", { className: "home-note", text: t("today.noMore") }),
-        textButton(t("today.cookWith"), () => go("cook"))
-      )
+      el("div", { className: "home-links" }, textButton(t("today.seeWeek"), () => go("mealplan")), textButton(t("today.cookWith"), () => go("cook")))
     );
   }
 
-  function renderRecipes(openSlot) {
-    if (!meals) return go("home");
+  // ------------------------------------------------------------ recipes
+
+  function renderRecipes(recipes, openSlot) {
     const opened = openSlot ?? nextSlotFor();
 
-    const cards = meals.map((meal) =>
+    const cards = recipes.map((meal) =>
       el(
         "details",
         { className: "recipe", attrs: meal.slot === opened ? { open: "" } : {} },
@@ -161,62 +183,87 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
       )
     );
 
-    recipesEl.replaceChildren(
-      el("button", { className: "link back", text: t("recipes.back"), attrs: { type: "button" }, on: { click: () => go("home") } }),
-      el("h2", { text: t("recipes.title") }),
-      ...cards
-    );
+    recipesEl.replaceChildren(back(), el("h2", { text: t("recipes.title") }), ...cards);
     recipesEl.querySelector("details[open]")?.scrollIntoView?.({ behavior: "smooth", block: "start" });
   }
 
-  // Asks the AI for a menu. newChanges is 0 for the day's first menu, then 1, 2 for re-makes.
-  async function generate(newChanges) {
-    if (busy) return;
-    busy = true;
-    const hadMenu = meals !== null && newChanges > 0;
-    renderLoading(hadMenu ? t("today.finding") : t("today.planning"));
+  function renderRecipesStatus(content) {
+    recipesEl.replaceChildren(back(), el("h2", { text: t("recipes.title") }), ...content);
+  }
 
-    const prefs = getPrefs();
-    const lang = getLang(); // the language this menu is made in, even if the person switches meanwhile
-    const planKey = { ...prefs, lang };
+  // Shows today's recipes. They are written once a day for the four dishes of the plan, then saved on the phone.
+  async function showRecipes(openSlot) {
+    if (!meals) return go("home");
+    const asked = meals;
+    const key = { ...getPrefs(), lang: getLang() };
+
+    const saved = loadRecipes(key, asked);
+    if (saved) return renderRecipes(saved, openSlot);
+    if (recipesBusy) return;
+
+    recipesBusy = true;
+    renderRecipesStatus([
+      el("div", { className: "loading" }, el("div", { className: "chef", text: "🧑‍🍳", attrs: { "aria-hidden": "true" } }), el("p", { className: "lead", text: t("recipes.writing"), attrs: { role: "status" } })),
+    ]);
     try {
+      const prefs = getPrefs();
       const data = await getPlan({
         state: prefs.state,
         region: prefs.region,
         diet: prefs.diet,
         people: prefs.people,
-        avoid: recentDishes(), // yesterday's dishes (and today's, when re-making), so it changes
+        dishes: Object.fromEntries(asked.map((meal) => [meal.slot, meal.name])), // the plan's dishes, so nothing is re-chosen
       });
-      savePlan(planKey, data.meals, newChanges);
-      recordDishes(data.meals.map((m) => m.name));
-      if (getLang() !== lang) {
-        // the language was switched while waiting: this menu is saved for later, now show the right language
-        busy = false;
-        return await showHome(); // (await, so the "finally" below does not reset busy too early)
-      }
-      meals = data.meals;
-      changes = newChanges;
-      renderHome();
+      saveRecipes(key, asked, data.meals);
+      recipesBusy = false;
+      if (!recipesEl.hidden && getLang() === key.lang) renderRecipes(data.meals, openSlot);
     } catch (err) {
-      if (hadMenu) renderHome(err.message); // keep showing the menu we already had
-      else renderError(err.message);
-    } finally {
+      recipesBusy = false;
+      renderRecipesStatus([
+        el("p", { className: "error", text: err.message, attrs: { role: "alert" } }),
+        el("button", { className: "primary", text: t("today.tryAgain"), attrs: { type: "button" }, on: { click: () => showRecipes(openSlot) } }),
+      ]);
+    }
+  }
+
+  // ------------------------------------------------------------ the plan
+
+  // Asks for a weekly plan starting today.
+  async function generate() {
+    if (busy) return;
+    busy = true;
+    renderLoading(t("week.planning"));
+    const lang = getLang(); // the language this plan is made in, even if the person switches meanwhile
+    try {
+      await requestWeek({ prefs: getPrefs(), lang, startKey: todayKey() });
       busy = false;
+      await showHome(); // draws today's row of the plan (or, if the language changed meanwhile, that language's state)
+    } catch (err) {
+      busy = false;
+      if (getLang() !== lang) return showHome();
+      renderError(err.message);
     }
   }
 
   async function showHome() {
-    const saved = loadPlan({ ...getPrefs(), lang: getLang() });
-    if (saved) {
-      meals = saved.meals;
-      changes = saved.changes;
-      renderHome(); // no AI request: this is the saved menu
+    if (busy) return;
+    const lang = getLang();
+    const plan = loadWeek({ ...getPrefs(), lang });
+    const today = plan && todaysMeals(plan);
+    if (today) {
+      meals = today;
+      renderHome(); // no AI request: this is today's row of the saved plan
       return;
     }
     meals = null;
-    changes = 0;
-    await generate(0);
+    const once = lang + todayKey();
+    if (autoTriedFor !== once && plansLeft() > 0) {
+      autoTriedFor = once;
+      await generate();
+    } else {
+      renderNoPlan();
+    }
   }
 
-  return { showHome, showRecipes: renderRecipes };
+  return { showHome, showRecipes };
 }

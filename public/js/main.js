@@ -2,7 +2,7 @@
 // Each feature lives in js/features/ and is connected here.
 //
 // Screens inside the app: "home" (today's menu and the feature grid), "recipes" (today's recipes),
-// "cook" (recipe from the ingredients you have) and "soon" (a feature that is not built yet).
+// "cook" (recipe from the ingredients you have), "mealplan" (the weekly plan) and "soon" (a feature that is not built yet).
 // Before those, the questions screen appears on a first visit.
 
 import { loadPrefs, savePrefs } from "./prefs.js";
@@ -10,6 +10,7 @@ import { loadRegions, describeRegion, DIETS } from "./data/regions.js";
 import { startOnboarding } from "./features/onboarding.js";
 import { initRecipeForm } from "./features/recipe.js";
 import { initToday } from "./features/today.js";
+import { initMealPlan } from "./features/mealplan.js";
 import { renderNav, renderSoon } from "./features/nav.js";
 import { initTextSize } from "./features/textSize.js";
 import { t, tOr, LANGS, getLang, setLang, onLangChange, applyStatic, peopleText } from "./i18n.js";
@@ -23,6 +24,7 @@ const homeEl = document.getElementById("home");
 const recipesEl = document.getElementById("recipes");
 const cookEl = document.getElementById("cook");
 const soonEl = document.getElementById("soon");
+const mealplanEl = document.getElementById("mealplan");
 const navEl = document.getElementById("nav");
 
 // The line under the title. The home region only applies to Indian food, so on the
@@ -32,7 +34,7 @@ function summarize(p, view) {
   const diet = dietEntry ? tOr(`diet.${dietEntry.id}`, dietEntry.label) : "";
   const cooking = view === "cook";
   const place = !cooking || cuisineEl.value === "Indian" ? describeRegion(p.state, p.region) : "";
-  const people = cooking ? "" : peopleText(p.people);
+  const people = cooking || view === "mealplan" ? "" : peopleText(p.people); // the weekly plan does not depend on the number of people
   return t("prefs.cookingFor") + " " + [place, diet, people].filter(Boolean).join(" · ");
 }
 
@@ -41,6 +43,7 @@ function start() {
   let view = "home";
 
   const today = initToday({ homeEl, recipesEl, getPrefs: () => prefs, go });
+  const mealPlan = initMealPlan({ container: mealplanEl, getPrefs: () => prefs, go });
 
   function go(next, arg) {
     view = next;
@@ -48,10 +51,12 @@ function start() {
     recipesEl.hidden = next !== "recipes";
     cookEl.hidden = next !== "cook";
     soonEl.hidden = next !== "soon";
+    mealplanEl.hidden = next !== "mealplan";
     navEl.hidden = next !== "home"; // the feature grid belongs to the home screen
     summaryEl.textContent = summarize(prefs, view);
     if (next === "home") today.showHome();
     if (next === "recipes") today.showRecipes(arg);
+    if (next === "mealplan") mealPlan.show();
     if (next === "soon") {
       soonFeature = arg;
       renderSoon(soonEl, arg, { onBack: () => go("home") });

@@ -26,12 +26,10 @@ export default {
   "today.textSingle": "We've planned your day's food based on your preferences.",
   "today.meals": "Today's meals",
   "today.viewRecipes": "View today's recipes",
-  "today.another": "Suggest a different menu ({n} left today)",
-  "today.noMore": "That's all the menu changes for today.",
+  "today.seeWeek": "See the whole week",
+  "recipes.writing": "Writing today's recipes…",
   "today.cookWith": "Cook with what I have",
   "today.upNext": "Up next",
-  "today.planning": "Planning today's menu…",
-  "today.finding": "Finding a different menu…",
   "today.failed": "Couldn't plan today's menu",
   "today.tryAgain": "Try again",
 
@@ -108,6 +106,17 @@ export default {
   "region.north": "North Karnataka",
   "region.south": "South Karnataka",
   "region.coastal": "Coastal Karnataka",
+
+  // weekly meal plan
+  "week.title": "This week's meals",
+  "week.lead": "Breakfast, lunch, snacks and dinner for the next 7 days. Similar dishes are kept apart, so it won't be pasta one day and macaroni the next.",
+  "week.empty": "Plan all your meals for the next 7 days in one go. It is made once and saved on this phone.",
+  "week.plan": "Plan my week",
+  "week.planning": "Planning your week…",
+  "week.replanning": "Finding a different plan…",
+  "week.another": "Suggest a different plan ({n} left today)",
+  "week.noMore": "That's enough plans for today. Please come back tomorrow.",
+  "week.today": "Today",
 
   // problems
   "err.network": "Can't reach the server. Please check your internet.",

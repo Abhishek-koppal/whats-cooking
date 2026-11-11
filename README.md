@@ -14,7 +14,8 @@ Phone (public/)  ──►  /api/recipe (backend/recipe.py)  ──►  Gemini
 ```
 app.py                 creates the backend and plugs in the features
 backend/
-  plan.py              today's menu (/api/plan): 3 meals with full recipes in ONE request
+  plan.py              recipes for a day (/api/plan); with `dishes` it writes recipes for the weekly plan's dishes
+  week.py              the weekly meal plan (/api/week): breakfast, lunch, snacks and dinner for 7 days in ONE request, no repeats of similar dishes
   recipe.py            recipe from the ingredients you have (/api/recipe)
   common.py            shared checks and prompt rules (diet, home region)
   gemini.py            the only code that talks to Gemini
@@ -95,3 +96,13 @@ The 2-a-day limit is kept on the phone, so it is a nudge, not real protection. T
 - Saving favourite recipes.
 
 Until the limits are added, keep the link private.
+
+## Meal plan (weekly) and today's menu
+
+- **One source of truth:** the weekly plan decides what is cooked. The home screen's "today" is today's row of the saved plan, so Home and the Meal plan screen always show the same dishes. There is no separate daily menu any more. If there is no plan when the app opens, one is made for the week (once per language and day).
+- **One AI call per week:** the plan is 28 dish names (breakfast, lunch, snacks, dinner for 7 days; no recipes), saved on the phone for 7 days. Asking for a plan is limited to 3 a day in total (`weekStore.js`), counted before the request.
+- **Recipes on demand:** "View today's recipes" (or tapping a meal) asks `/api/plan` with `dishes` set to today's four dishes, so it only writes recipes for exactly those dishes (the names are forced to match). Saved for the day, so it is one call a day at most.
+- **One staple per meal:** every dish has a base (rice, roti, batter, pasta-noodles, bread, other). Breakfast, lunch and dinner of a day must each use a different one, so never rice three times in a day (`FAMILY_BASE` decides the clear cases, so the AI cannot mislabel a rice dish).
+- **No similar meals close together:** every dish gets a "family" from a fixed list (`FAMILIES` in `backend/week.py`), so macaroni and spaghetti are both `pasta`. A family may not repeat on the same or the next day (whichever meal it is) and appears at most twice a week; the first day of a new week avoids the last day of the old one; breakfast-only and snack-only dishes stay in their slot; veg plans get no non-veg families; at least 6 of the 14 lunches and dinners are your home region's food.
+- **Checked by the server:** if a rule is broken, Gemini is asked once more with the exact problems listed, and the better answer is used.
+- **Tuning:** `MIN_DAY_GAP`, `MAX_PER_FAMILY`, `MIN_REGIONAL`, `MAX_PER_CUISINE`, `FAMILY_BASE` at the top of `backend/week.py`.

@@ -1,11 +1,10 @@
-// Remembers today's menu and the recent dishes on THIS phone.
-// This is what keeps the app cheap: the menu is asked from the AI once a day, then reused.
+// Remembers today's recipes and the recent dishes on THIS phone.
+// This is what keeps the app cheap: the recipes are asked from the AI once a day (when first opened), then reused.
 
-const PLAN_KEY = "wc.plan.v1";
+const RECIPES_KEY = "wc.recipes.v1";
 const HISTORY_KEY = "wc.history.v1";
 const HISTORY_DAYS = 7; // today plus the 6 days before
-const MAX_RECENT = 24; // how many recent dish names are sent along (about 6 days) so the menu changes
-export const MAX_CHANGES_PER_DAY = 2; // "Suggest a different menu" taps allowed per day
+const MAX_RECENT = 24; // how many recent dish names are sent along so the next weekly plan brings something new
 
 // "2026-11-05" in the phone's own timezone (so the menu changes at the person's midnight).
 export function todayKey(now = new Date()) {
@@ -13,7 +12,7 @@ export function todayKey(now = new Date()) {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
-// A menu is only reused while the answers (and the language) it was made for are unchanged.
+// Recipes are only reused while the answers, the language and the four dishes they were written for are unchanged.
 // prefs may carry a `lang` field; without one it counts as English.
 export function signature(prefs) {
   return [prefs.state, prefs.region ?? "", prefs.diet, prefs.people, prefs.lang ?? "en"].join("|");
@@ -38,21 +37,23 @@ function write(key, value) {
 const usable = (m) =>
   m && typeof m.slot === "string" && typeof m.name === "string" && Array.isArray(m.ingredients) && Array.isArray(m.steps);
 
-// Today's saved menu, or null if there is none for today and these answers. One menu is kept for each
-// language, so switching language and back again does not ask the AI a second time.
-export function loadPlan(prefs, today = todayKey()) {
-  const saved = read(PLAN_KEY);
-  if (!saved || saved.date !== today || typeof saved.plans !== "object" || saved.plans === null) return null;
-  const plan = saved.plans[signature(prefs)];
-  if (!plan || !Array.isArray(plan.meals) || plan.meals.length !== 4 || !plan.meals.every(usable)) return null;
-  return { meals: plan.meals, changes: Number.isInteger(plan.changes) ? plan.changes : 0 };
+// The dishes (from the weekly plan) that today's recipes are written for: "slot: name" lines, in order.
+const dishKey = (meals) => meals.map((m) => `${m.slot}:${m.name}`).join("|");
+
+// Today's saved recipes for these four dishes, or null. One set is kept for each language and household size.
+export function loadRecipes(prefs, meals, today = todayKey()) {
+  const saved = read(RECIPES_KEY);
+  if (!saved || saved.date !== today || typeof saved.sets !== "object" || saved.sets === null) return null;
+  const set = saved.sets[signature(prefs)];
+  if (!set || set.dishes !== dishKey(meals) || !Array.isArray(set.meals) || set.meals.length !== 4 || !set.meals.every(usable)) return null;
+  return set.meals;
 }
 
-export function savePlan(prefs, meals, changes, today = todayKey()) {
-  const saved = read(PLAN_KEY);
-  const plans = saved && saved.date === today && typeof saved.plans === "object" && saved.plans ? saved.plans : {};
-  plans[signature(prefs)] = { meals, changes };
-  write(PLAN_KEY, { date: today, plans });
+export function saveRecipes(prefs, meals, recipes, today = todayKey()) {
+  const saved = read(RECIPES_KEY);
+  const sets = saved && saved.date === today && typeof saved.sets === "object" && saved.sets ? saved.sets : {};
+  sets[signature(prefs)] = { dishes: dishKey(meals), meals: recipes };
+  write(RECIPES_KEY, { date: today, sets });
 }
 
 // Remember the dish names, so tomorrow's menu (and a re-made menu today) can avoid them.

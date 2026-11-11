@@ -9,7 +9,7 @@ import { t } from "../i18n.js";
 
 export const FEATURES = [
   { id: "home", label: "Home", icon: "home", view: "home" },
-  { id: "meal-plan", label: "Meal plan", icon: "calendar", view: "soon" },
+  { id: "meal-plan", label: "Meal plan", icon: "calendar", view: "mealplan" },
   { id: "recipes", label: "Recipes", icon: "chef", view: "cook" }, // for now: a recipe from what you have
   { id: "fridge", label: "My fridge", icon: "fridge", view: "soon" },
   { id: "shopping", label: "Shopping", icon: "cart", view: "soon" },

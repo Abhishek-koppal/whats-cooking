@@ -54,7 +54,7 @@ export function setLang(id) {
 
 export const onLangChange = (fn) => listeners.push(fn);
 
-// t("today.another", { n: 2 }) -> "Suggest a different menu (2 left today)"
+// t("week.another", { n: 2 }) -> "Suggest a different plan (2 left today)"
 export function t(key, vars = {}) {
   const text = DICTS[current][key] ?? en[key] ?? key;
   return text.replace(/\{(\w+)\}/g, (match, name) => (name in vars ? String(vars[name]) : match));
