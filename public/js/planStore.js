@@ -12,10 +12,12 @@ export function todayKey(now = new Date()) {
   return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
 }
 
+import { familyFingerprint } from "./familyStore.js";
+
 // Recipes are only reused while the answers, the language and the four dishes they were written for are unchanged.
 // prefs may carry a `lang` field; without one it counts as English.
 export function signature(prefs) {
-  return [prefs.state, prefs.region ?? "", prefs.diet, prefs.people, prefs.lang ?? "en"].join("|");
+  return [prefs.state, prefs.region ?? "", prefs.diet, prefs.people, prefs.lang ?? "en", familyFingerprint()].join("|");
 }
 
 function read(key) {

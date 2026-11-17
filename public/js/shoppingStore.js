@@ -5,6 +5,7 @@
 // MAX_LISTS_PER_DAY a day, counted before the request.
 
 import { todayKey } from "./planStore.js";
+import { familyFingerprint } from "./familyStore.js";
 import { daysBetween } from "./weekStore.js";
 
 const SHOP_KEY = "wc.shop.v1";
@@ -27,7 +28,7 @@ function write(value) {
   }
 }
 
-const sig = (prefs) => [prefs.state, prefs.region ?? "", prefs.diet, prefs.people, prefs.lang ?? "en"].join("|");
+const sig = (prefs) => [prefs.state, prefs.region ?? "", prefs.diet, prefs.people, prefs.lang ?? "en", familyFingerprint()].join("|");
 
 // Identifies the plan the list was made for: the same dishes on the same days.
 export const planKey = (plan) => plan.start + "|" + plan.days.map((d) => ["breakfast", "lunch", "snacks", "dinner"].map((s) => d[s].name).join("/")).join(";");
@@ -42,12 +43,18 @@ export function daysToShopFor(plan, today = todayKey()) {
 
 const usableItem = (i) => i && typeof i.name === "string" && typeof i.quantity === "string" && typeof i.category === "string";
 
-// The saved list for this plan, or null. { items, checked: {id: true}, custom: [{ id, name }] }
+// A list belongs to a week (the plan's first day). If a dish of that week was swapped after the list was made, the
+// list is still the right week's list: it is kept, ticks and all, and marked out of date.
+const sameWeek = (list, plan) => typeof list?.plan === "string" && list.plan.startsWith(plan.start + "|");
+
+// The saved list for this plan, or null. { items, checked: {id: true}, custom: [{ id, name }], stale }
+// stale: a dish was swapped after the list was made.
 export function loadShopping(prefs, plan) {
   const saved = read();
   const list = saved.lists?.[sig(prefs)];
-  if (!list || list.plan !== planKey(plan) || !Array.isArray(list.items) || !list.items.every(usableItem)) return null;
+  if (!list || !sameWeek(list, plan) || !Array.isArray(list.items) || !list.items.every(usableItem)) return null;
   return {
+    stale: list.plan !== planKey(plan),
     items: list.items,
     checked: list.checked && typeof list.checked === "object" ? list.checked : {},
     custom: Array.isArray(list.custom) ? list.custom.filter((c) => c && typeof c.id === "string" && typeof c.name === "string") : [],
@@ -72,11 +79,11 @@ export function saveShopping(prefs, plan, items) {
   const saved = read();
   const key = planKey(plan);
   const previous = saved.lists?.[sig(prefs)];
-  const same = previous && previous.plan === key;
+  const same = previous && sameWeek(previous, plan); // ticks and own items survive an update of the same week
   const ids = new Set(items.map((i) => itemId(i.name)));
   const checked = same ? Object.fromEntries(Object.entries(previous.checked ?? {}).filter(([id]) => ids.has(id))) : {};
   // lists made for other plans are dropped: they could never be shown again
-  const lists = Object.fromEntries(Object.entries(saved.lists ?? {}).filter(([, l]) => l.plan === key));
+  const lists = Object.fromEntries(Object.entries(saved.lists ?? {}).filter(([, l]) => sameWeek(l, plan)));
   lists[sig(prefs)] = { plan: key, items, checked, custom: same ? previous.custom ?? [] : [] };
   write({ ...saved, lists });
 }
@@ -84,7 +91,7 @@ export function saveShopping(prefs, plan, items) {
 function update(prefs, plan, change) {
   const saved = read();
   const list = saved.lists?.[sig(prefs)];
-  if (!list || list.plan !== planKey(plan)) return;
+  if (!list || !sameWeek(list, plan)) return;
   change(list);
   write(saved);
 }

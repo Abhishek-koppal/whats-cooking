@@ -3,7 +3,7 @@
 //
 // WHEN YOU ADD A NEW FRONTEND FILE: add it to SHELL below and bump the CACHE number.
 
-const CACHE = "rasoi-v13";
+const CACHE = "rasoi-v17";
 const SHELL = [
   "/",
   "/style.css",
@@ -21,6 +21,10 @@ const SHELL = [
   "/js/weekStore.js",
   "/js/weekService.js",
   "/js/shoppingStore.js",
+  "/js/familyStore.js",
+  "/js/clipboard.js",
+  "/js/favStore.js",
+  "/js/recipeView.js",
   "/js/dishArt.js",
   "/js/icons.js",
   "/js/data/regions.js",
@@ -30,6 +34,8 @@ const SHELL = [
   "/js/features/today.js",
   "/js/features/mealplan.js",
   "/js/features/shopping.js",
+  "/js/features/family.js",
+  "/js/features/saved.js",
   "/js/features/nav.js",
   "/js/features/textSize.js",
   "/js/i18n.js",

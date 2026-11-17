@@ -58,10 +58,9 @@ def test_servings_as_text_number_is_accepted(client, sent):
 # ------------------------------------------------------------ prompt: Indian regional food
 
 
-def test_north_karnataka_veg_prompt(client, sent):
+def test_north_karnataka_prompt(client, sent):
     post(client)
     p = sent.prompt
-    assert "strictly vegetarian" in p
     assert "North Karnataka" in p
     assert "jolada rotti" in p and "girmit" in p
     assert "idli" in p and "dosa" in p and "NO MIXING" in p
@@ -78,10 +77,18 @@ def test_other_karnataka_regions_use_their_own_hints(client, sent, region, wante
     assert unwanted not in sent.prompt
 
 
-def test_non_veg_prompt_allows_meat_fish_eggs(client, sent):
-    post(client, diet="nonveg")
-    assert "meat, fish and eggs are all fine" in sent.prompt
-    assert "strictly vegetarian" not in sent.prompt
+@pytest.mark.parametrize("diet", ["veg", "nonveg"])
+def test_the_veg_or_non_veg_choice_does_not_matter_for_this_recipe(client, sent, diet):
+    post(client, diet=diet)
+    p = sent.prompt
+    assert "NO DIET RULE" in p and "use any meat, fish or eggs the user lists" in p
+    assert "strictly vegetarian" not in p and "meat, fish and eggs are all fine" not in p
+
+
+def test_a_vegetarian_household_does_not_limit_the_recipe_either(client, sent):
+    post(client, diet="veg", family=[{"relation": "me", "diet": "veg", "lowSalt": True}])
+    assert "vegetarian" not in sent.prompt.replace("NO DIET RULE: this recipe is not tied to a vegetarian or non-vegetarian choice", "")
+    assert "low-salt" in sent.prompt  # but health needs still apply
 
 
 def test_state_without_follow_up_question(client, sent):
@@ -109,15 +116,15 @@ def test_chinese_ignores_region_and_avoids_fusion(client, sent):
     assert "HOME FOOD" not in p
     assert "genuine Chinese dish" in p and "do not make a fusion dish" in p
     assert "Karnataka" not in p and "jolada" not in p and "idli" not in p
-    assert "strictly vegetarian" in p  # the diet still applies
+    assert "NO DIET RULE" in p
 
 
-def test_continental_is_european_style_and_keeps_diet(client, sent):
+def test_continental_is_european_style(client, sent):
     post(client, cuisine="Continental", diet="nonveg", region="south")
     p = sent.prompt
     assert "Continental (European-style)" in p
     assert "Karnataka" not in p and "bisi bele" not in p
-    assert "meat, fish and eggs are all fine" in p
+    assert "NO DIET RULE" in p
 
 
 def test_indian_has_regional_rule_but_no_style_rule(client, sent):
@@ -288,3 +295,55 @@ def test_recipe_in_kannada_is_requested_in_kannada(client, sent):
 def test_recipe_default_language_is_english(client, sent):
     post(client)
     assert "LANGUAGE:" not in sent.prompt
+
+
+# ------------------------------------------------------------ a proper dish and what is still to buy
+
+EGG_FRIED_RICE = {
+    "recipeName": "Egg Fried Rice",
+    "servings": 2,
+    "timeMinutes": 20,
+    "ingredients": [
+        {"name": "Cooked rice", "quantity": "300 g", "have": True},
+        {"name": "Eggs", "quantity": "2", "have": True},
+        {"name": "Salt", "quantity": "1 tsp", "have": True},
+        {"name": " Soy sauce ", "quantity": "2 tbsp", "have": False},
+        {"name": "Garlic", "quantity": "3 cloves", "have": False},
+        {"name": "Spring onion", "quantity": "2", "have": False},
+        {"name": "", "quantity": "1", "have": False},
+        "junk",
+    ],
+    "steps": ["Heat the wok."],
+}
+
+
+def test_the_ingredients_still_to_get_come_back_as_a_list(client, sent):
+    sent.reply = gemini_ok(EGG_FRIED_RICE)
+    data = post(client, ingredients="egg, rice", cuisine="Chinese").json()
+    assert [i["name"] for i in data["missing"]] == ["Soy sauce", "Garlic", "Spring onion"]
+    assert data["missing"][0] == {"name": "Soy sauce", "quantity": "2 tbsp", "have": False}
+    assert [i["name"] for i in data["ingredients"]] == ["Cooked rice", "Eggs", "Salt", "Soy sauce", "Garlic", "Spring onion"]  # blanks and junk dropped
+
+
+def test_an_ingredient_without_a_flag_counts_as_had(client, sent):
+    sent.reply = gemini_ok({**EGG_FRIED_RICE, "ingredients": [{"name": "Rice", "quantity": "1 cup"}]})
+    data = post(client).json()
+    assert data["missing"] == [] and data["ingredients"][0]["have"] is True
+
+
+def test_nothing_missing_gives_an_empty_list(client, sent):
+    assert post(client).json()["missing"] == []
+
+
+def test_the_prompt_asks_for_a_proper_dish_with_its_real_method_and_the_missing_items(client, sent):
+    post(client, ingredients="egg, rice", cuisine="Chinese")
+    prompt = sent.prompt
+    assert "PROPER DISH" in prompt and "Egg Fried Rice" in prompt and "soy sauce" in prompt
+    assert "genuine cooking method" in prompt and "Do NOT shrink the dish" in prompt
+    assert "ADD WHAT IS NEEDED" in prompt and "have=false" in prompt and "water, salt and plain cooking oil" in prompt
+
+
+def test_the_schema_has_the_have_flag(client, sent):
+    post(client)
+    item = sent.last["payload"]["generationConfig"]["responseSchema"]["properties"]["ingredients"]["items"]
+    assert item["properties"]["have"] == {"type": "BOOLEAN"} and "have" in item["required"]

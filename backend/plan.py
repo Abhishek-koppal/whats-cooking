@@ -11,6 +11,7 @@ import random
 from fastapi import APIRouter, Request
 
 from . import gemini, regions
+from .family import allergy_terms, family_rules, find_allergens, parse_family, retry_note, texts_in
 from .common import diet_rules, error, language_rules, parse_lang, parse_preferences, reply, style_rules, to_int, writing_rules
 
 router = APIRouter()
@@ -65,6 +66,7 @@ PLAN_SCHEMA = {
                     "steps": {"type": "ARRAY", "items": {"type": "STRING"}},
                     "servedWith": {"type": "STRING"},
                     "tip": {"type": "STRING"},
+                    "familyNote": {"type": "STRING"},
                 },
                 "required": ["slot", "name", "timeMinutes", "difficulty", "art", "ingredients", "steps"],
             },
@@ -101,7 +103,7 @@ def breakfast_idea(state: str, region: str | None, rng) -> str:
     return rng.choice(BREAKFAST_KINDS)
 
 
-def build_recipes_prompt(people: int, prefs: dict, dishes: dict[str, str], lang: str = "en") -> str:
+def build_recipes_prompt(people: int, prefs: dict, dishes: dict[str, str], lang: str = "en", family: list[dict] | None = None) -> str:
     """Recipes for a day that is already planned (by the weekly plan). The dish names are fixed, so the two screens agree."""
     lines = [
         "You are a friendly home-cooking assistant writing the recipes for a family's day of meals that is "
@@ -127,13 +129,16 @@ def build_recipes_prompt(people: int, prefs: dict, dishes: dict[str, str], lang:
         "(water, cooking oil, common spices).",
         "- tip: one short sentence, or an empty string.",
         *diet_rules(prefs["diet"]),
+        *family_rules(family or [], prefs["diet"], note=True),
     ]
     return "\n".join(lines)
 
 
-def build_prompt(people: int, prefs: dict, avoid: list[str], rng=random, lang: str = "en", dishes: dict | None = None) -> str:
+def build_prompt(
+    people: int, prefs: dict, avoid: list[str], rng=random, lang: str = "en", dishes: dict | None = None, family: list[dict] | None = None
+) -> str:
     if dishes:
-        return build_recipes_prompt(people, prefs, dishes, lang)
+        return build_recipes_prompt(people, prefs, dishes, lang, family)
     cuisine_rules = style_rules("Indian", prefs["state"], prefs["region"], has_ingredients=False, diet=prefs["diet"]) or [
         "- Suggest simple, popular everyday home-cooked meals."
     ]
@@ -177,6 +182,7 @@ def build_prompt(people: int, prefs: dict, avoid: list[str], rng=random, lang: s
         "(water, cooking oil, common spices).",
         "- tip: one short sentence, or an empty string.",
         *diet_rules(prefs["diet"]),
+        *family_rules(family or [], prefs["diet"], note=True),
         *cuisine_rules,
     ]
     if rng.random() < NORTH_CHANCE:
@@ -228,7 +234,7 @@ def parse_request(body) -> tuple[dict | None, str | None]:
         if not all(dishes.get(slot) for slot in SLOTS):
             return None, "Please give one dish for each of breakfast, lunch, snacks and dinner."
 
-    return {"people": people, "prefs": prefs, "avoid": avoid[:MAX_AVOID], "lang": parse_lang(body), "dishes": dishes}, None
+    return {"people": people, "prefs": prefs, "avoid": avoid[:MAX_AVOID], "lang": parse_lang(body), "dishes": dishes, "family": parse_family(body)}, None
 
 
 def _text(value, limit: int) -> str:
@@ -268,6 +274,7 @@ def clean_meal(item) -> dict | None:
         "steps": steps,
         "servedWith": _text(item.get("servedWith"), 120),
         "tip": _text(item.get("tip"), 200),
+        "familyNote": _text(item.get("familyNote"), 200),
     }
 
 
@@ -304,16 +311,26 @@ async def make_plan(request: Request):
     if problem:
         return error(problem, 400)
 
-    try:
-        data = await gemini.generate_json(build_prompt(**values), PLAN_SCHEMA, temperature=1.0, slow=values["lang"] != "en")
-    except gemini.GeminiError as err:
-        return error(err.message, err.status)
+    terms = allergy_terms(values["family"])
+    prompt = build_prompt(**values)
+    meals = None
+    for attempt in range(2 if terms else 1):  # a second try only when an allergen slipped in
+        try:
+            data = await gemini.generate_json(prompt, PLAN_SCHEMA, temperature=1.0, slow=values["lang"] != "en")
+        except gemini.GeminiError as err:
+            return error(err.message, err.status)
 
-    meals = clean_meals(data)
-    if meals is None:
-        return error("Could not read the menu. Please try again.", 502)
-    if values["dishes"]:
-        for meal in meals:  # whatever the AI wrote, the dish is the one the weekly plan chose
-            meal["name"] = values["dishes"][meal["slot"]]
+        meals = clean_meals(data)
+        if meals is None:
+            return error("Could not read the menu. Please try again.", 502)
+        if values["dishes"]:
+            for meal in meals:  # whatever the AI wrote, the dish is the one the weekly plan chose
+                meal["name"] = values["dishes"][meal["slot"]]
+        found = find_allergens(terms, texts_in(meals))
+        if not found:
+            break
+        prompt += retry_note(found)
+    else:
+        return error("Could not make a menu that is safe for everyone's allergies. Please try again.", 502)
 
     return reply({"meals": meals, "people": values["people"]})

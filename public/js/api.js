@@ -1,6 +1,7 @@
 // The one place that talks to our backend.
 
 import { t, getLang } from "./i18n.js";
+import { forRequest } from "./familyStore.js";
 
 // What to show for a failed request. The words come from the language files, so they are shown in the
 // person's language (the server's own messages are English).
@@ -18,7 +19,7 @@ async function postJson(url, payload) {
     response = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ ...payload, lang: getLang() }), // lang: the AI writes in this language
+      body: JSON.stringify({ ...payload, lang: getLang(), family: forRequest() }), // lang: the AI writes in this language; family: food needs only, no names
     });
   } catch {
     // fetch only throws when the phone could not reach the server at all
@@ -34,3 +35,4 @@ export const getRecipe = (payload) => postJson("/api/recipe", payload);
 export const getPlan = (payload) => postJson("/api/plan", payload);
 export const getWeek = (payload) => postJson("/api/week", payload);
 export const getShopping = (payload) => postJson("/api/shopping", payload);
+export const getSwap = (payload) => postJson("/api/swap", payload);

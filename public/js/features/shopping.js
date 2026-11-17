@@ -8,8 +8,10 @@ import { getShopping } from "../api.js";
 import { el } from "../ui.js";
 import { t, getLang } from "../i18n.js";
 import { icon } from "../icons.js";
+import { copyText } from "../clipboard.js";
 import { todayKey } from "../planStore.js";
 import { loadWeek } from "../weekStore.js";
+import { staleNotice } from "./family.js";
 import {
   loadShopping, saveShopping, listsLeft, noteListAsked, daysToShopFor, setChecked, addCustomItem, removeCustomItem, itemId,
 } from "../shoppingStore.js";
@@ -17,28 +19,6 @@ import {
 const CATEGORIES = ["vegetables", "fruits", "dairy", "grains-pulses", "spices", "pantry", "meat-fish-eggs", "bakery-snacks", "other"];
 const textButton = (text, onClick) => el("button", { className: "link", text, attrs: { type: "button" }, on: { click: onClick } });
 const line = (name, quantity) => (quantity ? `${name} – ${quantity}` : name);
-
-// Copies text. The modern way first; the old way for browsers or pages that do not allow it.
-async function copyText(text) {
-  try {
-    await navigator.clipboard.writeText(text);
-    return true;
-  } catch {
-    const box = el("textarea", { attrs: { "aria-hidden": "true", readonly: "" } });
-    box.value = text;
-    box.style.cssText = "position:fixed;opacity:0;top:0;left:0";
-    document.body.append(box);
-    box.select();
-    let ok = false;
-    try {
-      ok = document.execCommand("copy");
-    } catch {
-      ok = false;
-    }
-    box.remove();
-    return ok;
-  }
-}
 
 // container is the screen's <section>; go(view) is main.js's way of switching screens.
 export function initShopping({ container, getPrefs, go }) {
@@ -149,6 +129,7 @@ export function initShopping({ container, getPrefs, go }) {
     container.replaceChildren(
       back(),
       el("p", { className: "lead", text: t("shop.lead") }),
+      list.stale ? staleNotice(listsLeft() > 0 ? { text: t("shop.update"), onClick: () => generate(plan, list) } : null, t("shop.stale")) : "",
       el(
         "section",
         { className: "shop-card" },

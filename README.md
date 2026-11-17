@@ -115,3 +115,32 @@ Until the limits are added, keep the link private.
 - **Copy shopping list** copies what is still to buy (everything, if all is ticked), grouped like a shop.
 - **Diet:** a vegetarian list never keeps meat, fish or eggs, whatever the AI wrote (`clean_items` in `backend/shopping.py`).
 - **Icons:** the favicon and app icons come from the Rasoi chef-hat "R." logo (`favicon.ico`, `favicon-32.png`, `favicon-64.png`, `apple-touch-icon.png`, `icon-192.png`, `icon-512.png`).
+
+## My family
+Nobody is added in advance. **My family** (the last tile) opens a list and an "Add a family member" form: who they are (myself, husband, wife, child, parent, other), an optional name, vegetarian or not, likes, favourite dishes, dislikes, allergies and intolerances, and two tick boxes for high blood pressure and diabetes.
+
+- **Stays on the phone.** Profiles are saved only in the browser (`wc.family.v1`, `js/familyStore.js`). With each request the app sends food rules only (`forRequest`): a role such as "Child", likes, favourites, dislikes, allergies, and "low salt" / "low sugar". Names and the words blood pressure or diabetes are never sent.
+- **Everything uses it.** `backend/family.py` turns the rules into prompt lines for the weekly plan, the day's recipes, "cook with what I have" and the shopping list: suit everyone, avoid dislikes, use favourites, low salt, low sugar, and mixed vegetarian households.
+- **Allergies are enforced, not just asked for.** The weekly plan is checked for allergen words (and sweets when someone needs low sugar); recipes get one retry and are then refused (502) rather than shown with an allergen; allergen items are dropped from the shopping list.
+- **Quota safe.** Editing the family costs nothing. A plan made before the family changed stays, with a banner offering a new plan (counted in the usual 3 a day). Saved recipes and the shopping list are keyed by a fingerprint of the family, so they are rewritten once when it changes.
+- Tests: `tests/test_family.py`.
+
+## Household size follows the family
+Once family members are added, the number of people is the number of profiles (`livePrefs` in `public/js/main.js`). It sizes the day's recipes, the shopping list and the starting servings in "Cook with what I have". With no profiles, the number from the first questions is used. The family screen says which number is in use.
+
+## Cook with what I have (proper dish and what to buy)
+The AI is told to pick the real, classic dish your ingredients are the base of in the chosen cuisine (rice and egg in Chinese food is Egg Fried Rice, not rice with an egg mixed in), to use its genuine method, and to list every ingredient with `have` true or false. The server returns `missing` (the `have: false` ones). The screen shows "What you already have", then "What you still need to buy" with a **Copy shopping list** button (`js/clipboard.js`, shared with the Shopping screen). Tests: `tests/test_recipe.py`.
+
+## Recipes ignore veg / non-veg; health needs still apply
+"Cook with what I have" is not tied to the vegetarian or non-vegetarian choice (and the screen no longer shows it): the ingredients decide, so listed meat, fish or eggs are used and none are added as extras. Allergies, dislikes, low salt and low sugar from My family do apply to it, to the day's recipes, the weekly plan and the shopping list. Low salt means a pinch of salt and no soy sauce, ketchup, pickles or cheese; low sugar means no sugar, jaggery or sweet sauces. Each recipe carries a `familyNote` ("For your family: ...") saying how it was adjusted. Allergen checks skip that note.
+
+## Swap one meal
+Every dish on today and the days to come has a small swap button on the Meal plan screen (`POST /api/swap`, `backend/swap.py`). It is one small request instead of re-planning the week.
+- The server works out which families, staples and cuisines are still allowed in that spot (not the same kind as the dish it replaces, not within a day of the same family, at most twice a week, one staple per meal in a day, veg and low-sugar rules, the cuisine mix, last week's final day) and gives the AI only those as the answer's allowed values. It then runs `check_plan` on the whole week and refuses a swap that causes any new problem, a dish already on the plan or cooked recently, and allergens. One retry, with the exact problems.
+- The screen shows an **Undo** note (free: no request). Home follows at once because it reads the same plan.
+- Quota: swaps are counted before asking, 10 a day (`MAX_SWAPS_PER_DAY` in `weekStore.js`), separate from the 3 weekly plans.
+- If a dish is swapped after the shopping list was made, the list is kept with its ticks and marked "a dish was swapped", with an **Update the list** button (counted in the 3 lists a day). Today's recipes for a swapped day are written again when opened.
+- Tests: `tests/test_swap.py`.
+
+## Saved recipes
+A heart button on every recipe (today's recipes and "Cook with what I have") keeps the whole recipe on the phone (`js/favStore.js`, `wc.fav.v1`, up to 60). Saved recipes open from the Home links and from the Cook screen, work offline, and cost no AI quota. Removing takes two taps.

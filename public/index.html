@@ -65,6 +65,12 @@
       <!-- The shopping list (js/features/shopping.js) -->
       <section id="shopping" hidden></section>
 
+      <!-- My family: who is cooked for, and what each person needs. Filled in by js/features/family.js. -->
+      <section id="family" hidden></section>
+
+      <!-- Saved recipes (js/features/saved.js) -->
+      <section id="saved" hidden></section>
+
       <!-- A feature that is not built yet (js/features/nav.js) -->
       <section id="soon" hidden></section>
 
@@ -73,6 +79,7 @@
         <button type="button" id="back-home" class="link back" data-i18n="back.home">← Home</button>
         <h2 data-i18n="cook.title">Cook with what I have</h2>
         <p class="lead" data-i18n="cook.lead">Tell me what you have at home and I'll suggest a recipe.</p>
+        <button type="button" id="open-saved" class="link" data-i18n="fav.title">Saved recipes</button>
 
         <form id="form">
           <label for="ingredients" data-i18n="cook.ingredients">Ingredients you have</label>
@@ -101,9 +108,14 @@
         <section id="result" hidden>
           <h2 id="recipe-name"></h2>
           <p id="recipe-meta" class="meta"></p>
+          <div id="recipe-fav"></div>
+          <p id="recipe-family-note" class="family-note" hidden></p>
 
-          <h3 data-i18n="recipe.need">What you need</h3>
+          <h3 id="recipe-have-title" data-i18n="recipe.have">What you already have</h3>
           <ul id="recipe-ingredients"></ul>
+
+          <!-- What the dish still needs: filled in by js/features/recipe.js, with a copy button -->
+          <div id="recipe-buy" class="buy-card"></div>
 
           <h3 data-i18n="recipe.how">How to make it</h3>
           <ol id="recipe-steps" class="steps"></ol>

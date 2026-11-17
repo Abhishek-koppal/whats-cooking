@@ -5,9 +5,11 @@
 // is limited to MAX_WEEK_PLANS_PER_DAY a day in total, across languages.
 
 import { todayKey } from "./planStore.js";
+import { familyFingerprint } from "./familyStore.js";
 
 const WEEK_KEY = "wc.week.v1";
 export const MAX_WEEK_PLANS_PER_DAY = 3; // the first plan plus two "different plan" taps
+export const MAX_SWAPS_PER_DAY = 10; // swapping one dish is a small request, but still counted
 const TAIL_MEALS = 4; // the last day's four meals are sent along, so the next week does not start with the same dishes
 const MAX_GAP_DAYS = 9; // a new plan only looks back at the old one if it follows it closely
 
@@ -61,8 +63,11 @@ export function loadWeek(prefs, today = todayKey()) {
   const offset = daysBetween(saved.start, today);
   if (!(offset >= 0 && offset <= 6)) return null;
   const plan = saved.plans[weekSignature(prefs)];
-  return plan && usableDays(plan.days) ? { start: saved.start, days: plan.days } : null;
+  return plan && usableDays(plan.days) ? { start: saved.start, days: plan.days, family: plan.family ?? "" } : null;
 }
+
+// True when the family's food needs changed after this plan was made (the plan is kept, and the person is told).
+export const isStale = (plan) => (plan.family ?? "") !== familyFingerprint();
 
 // How many more plans may be asked for today.
 export function plansLeft(today = todayKey()) {
@@ -97,10 +102,35 @@ export function saveWeek(prefs, days, startKey, tail) {
   const sameWeek = saved?.start === startKey && typeof saved.plans === "object" && saved.plans !== null;
   write({
     start: startKey,
-    plans: { ...(sameWeek ? saved.plans : {}), [weekSignature(prefs)]: { days } },
+    plans: { ...(sameWeek ? saved.plans : {}), [weekSignature(prefs)]: { days, family: familyFingerprint() } },
     tail,
     asked: saved?.asked,
+    swaps: saved?.swaps,
   });
+}
+
+// How many more dishes may be swapped today.
+export function swapsLeft(today = todayKey()) {
+  const saved = read();
+  const used = saved?.swaps?.date === today && Number.isInteger(saved.swaps.n) ? saved.swaps.n : 0;
+  return Math.max(0, MAX_SWAPS_PER_DAY - used);
+}
+
+// Counts one swap request against today's limit. Called BEFORE asking, like noteAsked.
+export function noteSwapAsked(today = todayKey()) {
+  const saved = read() ?? {};
+  const used = saved.swaps?.date === today && Number.isInteger(saved.swaps.n) ? saved.swaps.n : 0;
+  write({ ...saved, swaps: { date: today, n: used + 1 } });
+}
+
+// Puts `meal` in the plan in place of that day's slot (a swap, or an undo). False if there is no such plan or spot.
+export function replaceMeal(prefs, index, slot, meal) {
+  const saved = read();
+  const plan = saved?.plans?.[weekSignature(prefs)];
+  if (!plan || !usableDays(plan.days) || !SLOTS.includes(slot) || !plan.days[index] || !usableMeal(meal)) return false;
+  plan.days[index][slot] = meal;
+  write(saved);
+  return true;
 }
 
 // Today's four meals from the plan, as [{ slot, name, art, timeMinutes, ... }] in the order of the day.

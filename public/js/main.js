@@ -2,7 +2,7 @@
 // Each feature lives in js/features/ and is connected here.
 //
 // Screens inside the app: "home" (today's menu and the feature grid), "recipes" (today's recipes),
-// "cook" (recipe from the ingredients you have), "mealplan" (the weekly plan), "shopping" (the shopping list) and "soon" (a feature that is not built yet).
+// "cook" (recipe from the ingredients you have), "mealplan" (the weekly plan), "shopping" (the shopping list), "family" (who is cooked for), "saved" (the favourite recipes) and "soon" (a feature that is not built yet).
 // Before those, the questions screen appears on a first visit.
 
 import { loadPrefs, savePrefs } from "./prefs.js";
@@ -12,6 +12,9 @@ import { initRecipeForm } from "./features/recipe.js";
 import { initToday } from "./features/today.js";
 import { initMealPlan } from "./features/mealplan.js";
 import { initShopping } from "./features/shopping.js";
+import { initFamily } from "./features/family.js";
+import { initSaved } from "./features/saved.js";
+import { loadFamily } from "./familyStore.js";
 import { renderNav, renderSoon } from "./features/nav.js";
 import { initTextSize } from "./features/textSize.js";
 import { t, tOr, LANGS, getLang, setLang, onLangChange, applyStatic, peopleText } from "./i18n.js";
@@ -27,16 +30,18 @@ const cookEl = document.getElementById("cook");
 const soonEl = document.getElementById("soon");
 const mealplanEl = document.getElementById("mealplan");
 const shoppingEl = document.getElementById("shopping");
+const familyEl = document.getElementById("family");
+const savedEl = document.getElementById("saved");
 const navEl = document.getElementById("nav");
 
 // The line under the title. The home region only applies to Indian food, so on the
 // "cook with what I have" screen it is hidden for Continental and Chinese.
 function summarize(p, view) {
   const dietEntry = DIETS.find((d) => d.id === p.diet);
-  const diet = dietEntry ? tOr(`diet.${dietEntry.id}`, dietEntry.label) : "";
+  const diet = dietEntry && view !== "cook" ? tOr(`diet.${dietEntry.id}`, dietEntry.label) : "";
   const cooking = view === "cook";
   const place = !cooking || cuisineEl.value === "Indian" ? describeRegion(p.state, p.region) : "";
-  const people = cooking || view === "mealplan" ? "" : peopleText(p.people); // the weekly plan does not depend on the number of people
+  const people = cooking || view === "mealplan" || view === "family" || view === "saved" ? "" : peopleText(p.people); // the weekly plan does not depend on the number of people
   return t("prefs.cookingFor") + " " + [place, diet, people].filter(Boolean).join(" · ");
 }
 
@@ -44,9 +49,19 @@ function start() {
   let prefs = loadPrefs(); // null the first time, so the questions are shown
   let view = "home";
 
-  const today = initToday({ homeEl, recipesEl, getPrefs: () => prefs, go });
-  const mealPlan = initMealPlan({ container: mealplanEl, getPrefs: () => prefs, go });
-  const shopping = initShopping({ container: shoppingEl, getPrefs: () => prefs, go });
+  // The answers as the rest of the app sees them. Once family members are added, the household is the family:
+  // the number of people (which sizes recipes and the shopping list) is the number of profiles.
+  const livePrefs = () => {
+    if (!prefs) return prefs;
+    const members = loadFamily().length;
+    return members ? { ...prefs, people: members } : prefs;
+  };
+
+  const today = initToday({ homeEl, recipesEl, getPrefs: livePrefs, go });
+  const mealPlan = initMealPlan({ container: mealplanEl, getPrefs: livePrefs, go });
+  const shopping = initShopping({ container: shoppingEl, getPrefs: livePrefs, go });
+  const family = initFamily({ container: familyEl, go });
+  const saved = initSaved({ container: savedEl, go });
 
   function go(next, arg) {
     view = next;
@@ -56,12 +71,17 @@ function start() {
     soonEl.hidden = next !== "soon";
     mealplanEl.hidden = next !== "mealplan";
     shoppingEl.hidden = next !== "shopping";
+    familyEl.hidden = next !== "family";
+    savedEl.hidden = next !== "saved";
     navEl.hidden = next !== "home"; // the feature grid belongs to the home screen
-    summaryEl.textContent = summarize(prefs, view);
+    summaryEl.textContent = summarize(livePrefs(), view);
+    if (next === "cook") recipeForm.useHouseholdSize(livePrefs().people);
     if (next === "home") today.showHome();
     if (next === "recipes") today.showRecipes(arg);
     if (next === "mealplan") mealPlan.show();
     if (next === "shopping") shopping.show();
+    if (next === "family") family.show();
+    if (next === "saved") saved.show();
     if (next === "soon") {
       soonFeature = arg;
       renderSoon(soonEl, arg, { onBack: () => go("home") });
@@ -115,11 +135,12 @@ function start() {
     if (view === "recipes") return go("home");
     go(view, view === "soon" ? soonFeature : undefined);
   });
-  initRecipeForm({ getPrefs: () => prefs });
+  const recipeForm = initRecipeForm({ getPrefs: livePrefs });
   document.getElementById("change-prefs").addEventListener("click", () => showQuestions(prefs));
   document.getElementById("back-home").addEventListener("click", () => go("home"));
+  document.getElementById("open-saved").addEventListener("click", () => go("saved"));
   cuisineEl.addEventListener("change", () => {
-    if (prefs && view === "cook") summaryEl.textContent = summarize(prefs, view);
+    if (prefs && view === "cook") summaryEl.textContent = summarize(livePrefs(), view);
   });
 
   if (prefs) showApp();

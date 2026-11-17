@@ -12,8 +12,10 @@ import { el } from "../ui.js";
 import { t, getLang, getLocale, difficultyText } from "../i18n.js";
 import { SLOT_LABEL, dishTile } from "../dishArt.js";
 import { loadRecipes, saveRecipes, todayKey } from "../planStore.js";
-import { loadWeek, todaysMeals, plansLeft } from "../weekStore.js";
+import { loadWeek, todaysMeals, plansLeft, isStale } from "../weekStore.js";
+import { staleNotice } from "./family.js";
 import { requestWeek } from "../weekService.js";
+import { recipeBody } from "../recipeView.js";
 
 export function greetingFor(now = new Date()) {
   const hour = now.getHours();
@@ -40,6 +42,7 @@ const textButton = (text, onClick) =>
 // homeEl / recipesEl are the two screens; go(view, arg) is main.js's way of switching screens.
 export function initToday({ homeEl, recipesEl, getPrefs, go }) {
   let meals = null; // today's meals, from the weekly plan
+  let planStale = false; // the family changed after today's plan was made
   let busy = false; // a weekly plan is being made
   let recipesBusy = false;
   let autoTriedFor = ""; // one automatic try per language and day, so a failing server is not asked again and again
@@ -124,6 +127,7 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
     );
 
     homeEl.replaceChildren(
+      planStale ? staleNotice({ text: t("family.staleLink"), onClick: () => go("mealplan") }) : "",
       el(
         "div",
         { className: "today-head" },
@@ -145,7 +149,7 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
       el("h3", { className: "section-title", text: t("today.meals") }),
       list,
       el("button", { className: "primary dark", text: t("today.viewRecipes"), attrs: { type: "button" }, on: { click: () => go("recipes") } }),
-      el("div", { className: "home-links" }, textButton(t("today.seeWeek"), () => go("mealplan")), textButton(t("today.cookWith"), () => go("cook")))
+      el("div", { className: "home-links" }, textButton(t("today.seeWeek"), () => go("mealplan")), textButton(t("today.cookWith"), () => go("cook")), textButton(t("fav.title"), () => go("saved")))
     );
   }
 
@@ -170,16 +174,7 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
             el("span", { className: "meal-meta", text: metaOf(meal) })
           )
         ),
-        el(
-          "div",
-          { className: "recipe-body" },
-          meal.servedWith ? el("p", { className: "serve", text: t("recipe.serveWith", { x: meal.servedWith.replace(/^serve(d)? with\s+/i, "") }) }) : "",
-          el("h4", { text: t("recipe.need") }),
-          el("ul", {}, ...meal.ingredients.map((i) => el("li", { text: [i.quantity, i.name].filter(Boolean).join(" ") }))),
-          el("h4", { text: t("recipe.how") }),
-          el("ol", { className: "steps" }, ...meal.steps.map((step) => el("li", { text: step }))),
-          meal.tip ? el("p", { className: "tip", text: t("recipe.tip", { x: meal.tip }) }) : ""
-        )
+        recipeBody(meal, { save: { ...meal, servings: getPrefs().people } })
       )
     );
 
@@ -252,6 +247,7 @@ export function initToday({ homeEl, recipesEl, getPrefs, go }) {
     const today = plan && todaysMeals(plan);
     if (today) {
       meals = today;
+      planStale = isStale(plan);
       renderHome(); // no AI request: this is today's row of the saved plan
       return;
     }

@@ -578,3 +578,69 @@ body:lang(hi), body:lang(kn) { line-height: 1.65; }
   .meal .tile { width: 3rem; height: 3rem; font-size: 1.5rem; }
   .today-head h2 { font-size: 2rem; }
 }
+
+/* ---------- My family ---------- */
+input[type="text"] {
+  width: 100%;
+  font: inherit;
+  padding: 0.7rem 0.8rem;
+  color: var(--ink);
+  background: var(--bg);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  transition: border-color 0.2s;
+}
+.members { list-style: none; margin: 0 0 1.25rem; padding: 0; display: grid; gap: 0.75rem; }
+.member { padding: 1rem 1.1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.member-head { display: flex; align-items: baseline; gap: 0.6rem; flex-wrap: wrap; }
+.member-head h3 { margin: 0; }
+.member-head .link { margin-left: auto; min-height: 2.25rem; font-size: 0.85rem; }
+.chips { display: flex; flex-wrap: wrap; gap: 0.4rem; margin: 0.6rem 0 0.2rem; }
+.chip { padding: 0.15rem 0.6rem; font-size: 0.8rem; border: 1px solid var(--line); border-radius: 999px; background: var(--bg); overflow-wrap: anywhere; }
+.member-line { margin: 0.35rem 0 0; font-size: 0.92rem; color: var(--muted); overflow-wrap: anywhere; }
+.member-line strong { color: var(--ink); font-weight: 600; }
+.privacy { margin: 1.25rem 0 0; font-size: 0.85rem; color: var(--muted); }
+.family-form .ff label { margin-top: 1.1rem; }
+.hint { margin: 0.35rem 0 0; font-size: 0.82rem; color: var(--muted); }
+.family-form button.primary { margin-top: 1.5rem; }
+.form-links { display: flex; justify-content: space-between; gap: 1rem; margin-top: 0.5rem; }
+button.link.danger { color: #b3261e; }
+@media (prefers-color-scheme: dark) { button.link.danger { color: #f2b8b5; } }
+.health { margin: 1.4rem 0 0; padding: 0; border: 0; }
+.health legend { padding: 0; font-size: 0.68rem; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+/* a <label> wrapping a checkbox: undo the small-capitals label style */
+.check { display: flex; align-items: center; gap: 0.7rem; margin: 0.6rem 0 0; min-height: 2.75rem; font-size: 1rem; font-weight: 400; letter-spacing: 0; text-transform: none; color: var(--ink); cursor: pointer; }
+.check input { width: 1.3rem; height: 1.3rem; margin: 0; accent-color: var(--accent); flex: 0 0 auto; }
+.stale { margin: 0 0 1rem; padding: 0.8rem 1rem; border: 1px solid var(--accent); border-radius: 6px; background: var(--surface); }
+.stale p { margin: 0 0 0.2rem; font-size: 0.92rem; }
+.stale .link { min-height: 2.25rem; font-size: 0.9rem; padding-left: 0; }
+@container (min-width: 40rem) { .members { grid-template-columns: 1fr 1fr; } }
+
+/* ---------- Recipe: what is still to buy ---------- */
+.buy-card { margin: 1.5rem 0 0; padding: 0.2rem 1.1rem 1.1rem; background: var(--surface); border: 1px solid var(--line); border-radius: 6px; }
+.buy-card h3 { margin-top: 1rem; }
+.buy-card ul { margin: 0; padding-left: 1.2rem; }
+.buy-card li { margin: 0.3rem 0; }
+.buy-card .all-set { margin: 1rem 0 0; color: var(--muted); }
+.family-note { margin: 0.6rem 0 0; padding: 0.55rem 0.8rem; font-size: 0.9rem; color: var(--ink); background: var(--surface); border-left: 3px solid var(--accent); border-radius: 2px; overflow-wrap: anywhere; }
+
+/* ---------- Swap one dish ---------- */
+.swap-btn { flex: 0 0 auto; display: inline-flex; align-items: center; justify-content: center; width: 2.75rem; height: 2.75rem; margin: -0.4rem -0.5rem -0.4rem 0; padding: 0; color: var(--muted); background: none; border: 0; border-radius: 999px; cursor: pointer; }
+.swap-btn:hover, .swap-btn:focus-visible { color: var(--ink); background: var(--surface); }
+.swap-btn:disabled { opacity: 0.35; cursor: default; }
+.dm.swapping .meal-name { color: var(--muted); font-style: italic; }
+.dm.swapped { animation: swapped 2.4s ease-out; }
+@keyframes swapped { from { background: var(--surface); } to { background: transparent; } }
+.swap-note { position: sticky; bottom: 0.75rem; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin: 1rem 0 0; padding: 0.7rem 1rem; font-size: 0.92rem; color: var(--bg); background: var(--ink); border-radius: 6px; }
+.swap-note .link { min-height: 2.25rem; color: var(--bg); font-weight: 600; text-decoration: underline; flex: 0 0 auto; }
+@container (min-width: 60rem) { .day-card.today .swap-btn { align-self: flex-start; margin: 0; } }
+@media (prefers-reduced-motion: reduce) { .dm.swapped { animation: none; } }
+
+/* ---------- Saved recipes ---------- */
+.fav-row { display: flex; align-items: center; gap: 0.8rem; flex-wrap: wrap; margin: 0.2rem 0 0.4rem; }
+.fav-btn { display: inline-flex; align-items: center; gap: 0.5rem; min-height: 2.75rem; padding: 0.4rem 1rem; font: inherit; font-size: 0.92rem; color: var(--ink); background: none; border: 1px solid var(--line); border-radius: 999px; cursor: pointer; }
+.fav-btn.on { border-color: var(--accent); }
+.fav-btn.on svg { fill: currentColor; }
+.fav-btn:active { background: var(--surface); }
+.fav-note { font-size: 0.85rem; color: var(--muted); }
+#open-saved { padding-left: 0; }

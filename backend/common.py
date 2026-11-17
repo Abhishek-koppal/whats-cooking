@@ -113,8 +113,8 @@ def style_rules(cuisine: str, state: str, region: str | None, has_ingredients: b
     if sub and diet == "nonveg" and sub.get("nonVegDishes"):
         examples += f". Non-vegetarian examples: {sub['nonVegDishes']}"
     last_rule = (
-        "- The ingredients the user has come first: only pick a regional dish that can really be made "
-        "from them. Ignore any example dish that breaks the diet rule."
+        "- The ingredients the user has are the heart of the dish: pick a regional dish that is really built on "
+        "them (other ingredients it properly needs are fine). Ignore any example dish that does not suit the ingredients."
         if has_ingredients
         else "- Ignore any example dish that breaks the diet rule."
     )

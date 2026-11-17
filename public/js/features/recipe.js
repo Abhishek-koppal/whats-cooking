@@ -2,6 +2,10 @@
 
 import { getRecipe } from "../api.js";
 import { setStatus, setBusy } from "../ui.js";
+import { el } from "../ui.js";
+import { icon } from "../icons.js";
+import { copyText } from "../clipboard.js";
+import { favButton } from "../recipeView.js";
 import { t, tOr } from "../i18n.js";
 
 // textContent (not innerHTML) so nothing the AI writes can run as code.
@@ -23,7 +27,24 @@ function showRecipe(recipe) {
   if (recipe.timeMinutes) bits.push(t("minAbout", { n: recipe.timeMinutes }));
   document.getElementById("recipe-meta").textContent = bits.join(" · ");
 
-  fillList(document.getElementById("recipe-ingredients"), recipe.ingredients, (i) => `${i.quantity} ${i.name}`);
+  document.getElementById("recipe-fav").replaceChildren(
+    favButton({
+      name: recipe.recipeName, art: "plate", timeMinutes: recipe.timeMinutes, servings: recipe.servings,
+      ingredients: recipe.ingredients, steps: recipe.steps, tip: recipe.tip, familyNote: recipe.familyNote,
+    })
+  );
+
+  const noteEl = document.getElementById("recipe-family-note");
+  noteEl.hidden = !recipe.familyNote;
+  noteEl.textContent = recipe.familyNote ? t("recipe.familyNote", { x: recipe.familyNote }) : "";
+
+  const line = (i) => [i.quantity, i.name].filter(Boolean).join(" ");
+  const have = recipe.ingredients.filter((i) => i.have !== false);
+  const missing = recipe.missing ?? recipe.ingredients.filter((i) => i.have === false);
+
+  document.getElementById("recipe-have-title").hidden = have.length === 0;
+  fillList(document.getElementById("recipe-ingredients"), have, line);
+  showToBuy(recipe.recipeName, missing, line);
   fillList(document.getElementById("recipe-steps"), recipe.steps, (s) => s);
 
   const tipEl = document.getElementById("recipe-tip");
@@ -33,6 +54,29 @@ function showRecipe(recipe) {
   const resultEl = document.getElementById("result");
   resultEl.hidden = false;
   resultEl.scrollIntoView?.({ behavior: "smooth", block: "start" });
+}
+
+// "What you still need to buy": the missing ingredients and a button that copies them as a shopping list.
+function showToBuy(dish, missing, line) {
+  const box = document.getElementById("recipe-buy");
+  if (!missing.length) {
+    box.replaceChildren(el("p", { className: "all-set", text: t("recipe.haveAll") }));
+    return;
+  }
+
+  const copy = el("button", { className: "shop-copy", attrs: { type: "button" } }, icon("copy"), el("span", { text: t("recipe.copyList") }));
+  copy.addEventListener("click", async () => {
+    const text = [t("recipe.listTitle", { x: dish }), ...missing.map((i) => "• " + line(i))].join("\n");
+    const ok = await copyText(text);
+    copy.querySelector("span").textContent = ok ? t("shop.copied") : t("err.generic");
+    setTimeout(() => (copy.querySelector("span").textContent = t("recipe.copyList")), 2000);
+  });
+
+  box.replaceChildren(
+    el("h3", { text: t("recipe.buy") }),
+    el("ul", {}, ...missing.map((i) => el("li", { text: line(i) }))),
+    copy
+  );
 }
 
 // getPrefs() gives the saved answers (state, region, diet) at the moment of each request.
@@ -45,9 +89,11 @@ export function initRecipeForm({ getPrefs }) {
   const resultEl = document.getElementById("result");
 
   // "+" and "−" buttons (servings stay between 1 and 12)
+  let chosen = false; // once the person picks a number of servings, it is left alone
   const setServings = (n) => (servingsEl.value = Math.min(12, Math.max(1, n)));
-  document.getElementById("minus").addEventListener("click", () => setServings(Number(servingsEl.value) - 1));
-  document.getElementById("plus").addEventListener("click", () => setServings(Number(servingsEl.value) + 1));
+  document.getElementById("minus").addEventListener("click", () => { chosen = true; setServings(Number(servingsEl.value) - 1); });
+  document.getElementById("plus").addEventListener("click", () => { chosen = true; setServings(Number(servingsEl.value) + 1); });
+  servingsEl.addEventListener("input", () => { chosen = true; });
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -79,4 +125,7 @@ export function initRecipeForm({ getPrefs }) {
       setBusy(goBtn, false, t("cook.go"));
     }
   });
+
+  // The servings start at the size of the household (the family), until the person chooses another number.
+  return { useHouseholdSize: (people) => { if (!chosen) setServings(people); } };
 }

@@ -13,7 +13,7 @@ export const FEATURES = [
   { id: "recipes", label: "Recipes", icon: "chef", view: "cook" }, // for now: a recipe from what you have
   { id: "fridge", label: "My fridge", icon: "fridge", view: "soon" },
   { id: "shopping", label: "Shopping", icon: "cart", view: "shopping" },
-  { id: "family", label: "My family", icon: "users", view: "soon" },
+  { id: "family", label: "My family", icon: "users", view: "family" },
 ];
 
 // Draws the six tiles. onPick(feature) is called when one is tapped.

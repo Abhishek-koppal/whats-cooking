@@ -17,6 +17,7 @@ from fastapi import APIRouter, Request
 
 from . import gemini, regions
 from .common import LANGUAGES, diet_rules, error, parse_lang, parse_preferences, reply, style_rules, to_int
+from .family import allergy_terms, family_rules, find_allergens, parse_family
 from .plan import ART, _text
 
 router = APIRouter()
@@ -116,6 +117,7 @@ CUISINES = ["regional", "north-indian", "continental", "chinese"]
 # Only lunch and dinner count towards these limits (breakfast and snacks are mostly regional or light anyway).
 MAX_PER_CUISINE = {"north-indian": 4, "continental": 4, "chinese": 2}
 MIN_REGIONAL = 6  # of the 14 lunches and dinners
+MAX_NONVEG_WITH_VEGETARIANS = 4  # lunches and dinners with meat, fish or eggs when some of the family are vegetarian
 
 MAX_AVOID = 24
 MAX_AVOID_LENGTH = 60
@@ -151,9 +153,10 @@ WEEK_SCHEMA = {
 # ---------------------------------------------------------------- checking a plan (no AI, no quota)
 
 
-def check_plan(days: list[dict], diet: str, tail: list[str]) -> list[str]:
+def check_plan(days: list[dict], diet: str, tail: list[str], members: list[dict] | None = None) -> list[str]:
     """Returns what is wrong with the plan, in words the AI can act on. An empty list means it is good."""
     problems = []
+    members = members or []
 
     def label(day: int, slot: str) -> str:
         meal = days[day][slot]
@@ -207,13 +210,28 @@ def check_plan(days: list[dict], diet: str, tail: list[str]) -> list[str]:
     if cuisines.count("regional") < MIN_REGIONAL:
         problems.append(f'only {cuisines.count("regional")} lunches and dinners are "regional"; at least {MIN_REGIONAL} are needed')
 
+    # The family: an allergen in a dish name, sweets for someone who needs low sugar, too much meat for vegetarians.
+    for term in find_allergens(allergy_terms(members), [day[slot]["name"] for day in days for slot in SLOTS]):
+        for index, day in enumerate(days):
+            for slot in SLOTS:
+                if find_allergens([term], [day[slot]["name"]]):
+                    problems.append(f'{label(index, slot)} contains "{term}", which a family member is allergic or intolerant to')
+    if any(m["low_sugar"] for m in members) and "sweet-snack" in seen:
+        problems.append('a family member needs low-sugar food, so there must be no "sweet-snack" at all')
+    if diet != "veg" and any(m["diet"] == "veg" for m in members):
+        meat = sum(1 for day in days for slot in MAIN_SLOTS if day[slot]["family"] in NONVEG_FAMILIES)
+        if meat > MAX_NONVEG_WITH_VEGETARIANS:
+            problems.append(f"{meat} lunches and dinners are non-vegetarian but some of the family are vegetarian; the most allowed is {MAX_NONVEG_WITH_VEGETARIANS}")
+
     return problems
 
 
 # ---------------------------------------------------------------- the prompt
 
 
-def build_prompt(prefs: dict, start: int, avoid: list[str], tail: list[str], lang: str, fixes: list[str] | None = None) -> str:
+def build_prompt(
+    prefs: dict, start: int, avoid: list[str], tail: list[str], lang: str, fixes: list[str] | None = None, family: list[dict] | None = None
+) -> str:
     weekdays = [WEEKDAYS[(start + i) % 7] for i in range(DAYS)]
     cuisine_rules = style_rules("Indian", prefs["state"], prefs["region"], has_ingredients=False, diet=prefs["diet"])
     sub = regions.find_sub_region(prefs["state"], prefs["region"])
@@ -262,6 +280,7 @@ def build_prompt(prefs: dict, start: int, avoid: list[str], tail: list[str], lan
         f"- art must be exactly one of: {', '.join(ART)}.",
         "- timeMinutes is the total time from start to table.",
         *diet_rules(prefs["diet"]),
+        *family_rules(family or [], prefs["diet"]),
         *cuisine_rules,
     ]
     if lang != "en" and lang in LANGUAGES:
@@ -309,7 +328,10 @@ def parse_request(body) -> tuple[dict | None, str | None]:
             avoid.append(text)
 
     tail = [f for f in (body.get("tail") if isinstance(body.get("tail"), list) else []) if isinstance(f, str) and f in FAMILIES]
-    return {"prefs": prefs, "start": start, "avoid": avoid[:MAX_AVOID], "tail": tail[-MAX_TAIL:], "lang": parse_lang(body)}, None
+    return {
+        "prefs": prefs, "start": start, "avoid": avoid[:MAX_AVOID], "tail": tail[-MAX_TAIL:], "lang": parse_lang(body),
+        "family": parse_family(body),
+    }, None
 
 
 def clean_meal(item) -> dict | None:
@@ -351,7 +373,7 @@ def clean_days(data, start: int) -> list[dict] | None:
 
 
 async def ask(values: dict, fixes: list[str] | None, budget: float) -> list[dict] | None:
-    prompt = build_prompt(values["prefs"], values["start"], values["avoid"], values["tail"], values["lang"], fixes)
+    prompt = build_prompt(values["prefs"], values["start"], values["avoid"], values["tail"], values["lang"], fixes, values["family"])
     data = await gemini.generate_json(prompt, WEEK_SCHEMA, temperature=1.0, slow=values["lang"] != "en", budget=budget)
     return clean_days(data, values["start"])
 
@@ -388,7 +410,7 @@ async def make_week(request: Request):
         if days is None:
             fixes = ["the answer was not seven days of breakfast, lunch, snacks and dinner with a valid family, base and cuisine each"]
             continue
-        problems = check_plan(days, diet, tail)
+        problems = check_plan(days, diet, tail, values["family"])
         if best is None or len(problems) < len(best_problems):
             best, best_problems = days, problems
         if not problems:
