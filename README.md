@@ -144,3 +144,17 @@ Every dish on today and the days to come has a small swap button on the Meal pla
 
 ## Saved recipes
 A heart button on every recipe (today's recipes and "Cook with what I have") keeps the whole recipe on the phone (`js/favStore.js`, `wc.fav.v1`, up to 60). Saved recipes open from the Home links and from the Cook screen, work offline, and cost no AI quota. Removing takes two taps.
+
+## Cook with what I have: only ingredients are accepted
+- Free rules first (phone and server, same rules): symbols, links, code-like text and sentences with no real words are refused instantly with no AI call. Letters (any language), numbers, commas and `. - ' ( ) / &` are allowed, up to 25 items of at most 6 words.
+- Names, places and other non-food words are caught by the AI in the same recipe call (`notIngredients`), so there is no extra quota use. The wrong word is shown in the message.
+- The message appears right under the box, in English, Hindi and Kannada.
+
+## Number of people question
+Once family members are added, the first-time questions skip "how many people". The family count sets the household size.
+- The AI must first label every typed item (food, person_name, place, brand, object, sentence, other) before cooking; names are caught even in lowercase and the model is told not to guess unknown words are food.
+- A free list of common first names and surnames (backend/names.py, same list in public/js/names.js) refuses names at once, on the phone and the server, before any AI call.
+- Everyday words (hello, table, phone, city...) are refused with the names, free; the AI is told an unsure item is NOT food. Message: Please enter valid ingredients.
+- Off-topic questions typed into the ingredients box get the fixed culinary-assistant refusal (code off_topic), in en/hi/kn; the prompt has a STRICT food-only rule.
+- A recipe that uses none of the typed items (all marked still-to-buy) is shown as an error, not a made-up recipe.
+- Jumbles like 394u293u432 or single letters are refused for free (a real word of 2+ letters is needed).

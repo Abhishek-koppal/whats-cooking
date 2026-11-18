@@ -217,4 +217,7 @@ export default {
   "fav.full": "You can save up to {n} recipes. Remove one to save another.",
   "fav.remove": "Remove",
   "fav.removeSure": "Tap again to remove",
+  "cook.invalid": "Please enter valid ingredients, like “rice, egg, onion”. Use letters, numbers and commas, with no other symbols.",
+  "cook.offTopic": "I am a culinary assistant and can only help with food, recipes, and cooking questions. What would you like to make today?",
+  "cook.notFood": "Not an ingredient: {x}. Please enter valid ingredients, like “rice, egg, onion”.",
 };

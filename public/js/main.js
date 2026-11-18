@@ -103,6 +103,7 @@ function start() {
     questions = startOnboarding({
       container: onboardingEl,
       initial,
+      skipPeople: loadFamily().length > 0,
       onDone: (answers) => {
         questions = null;
         prefs = answers;

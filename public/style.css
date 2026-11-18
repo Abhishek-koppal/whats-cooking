@@ -644,3 +644,7 @@ button.link.danger { color: #b3261e; }
 .fav-btn:active { background: var(--surface); }
 .fav-note { font-size: 0.85rem; color: var(--muted); }
 #open-saved { padding-left: 0; }
+
+/* ---------- Ingredient box: when it is not a list of ingredients ---------- */
+textarea[aria-invalid="true"] { border-color: #b3261e; }
+@media (prefers-color-scheme: dark) { textarea[aria-invalid="true"] { border-color: #f2b8b5; } }

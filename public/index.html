@@ -84,7 +84,8 @@
         <form id="form">
           <label for="ingredients" data-i18n="cook.ingredients">Ingredients you have</label>
           <textarea id="ingredients" rows="3" maxlength="300"
-            placeholder="For example: rice, water, salt, egg" data-i18n-placeholder="cook.placeholder" required></textarea>
+            placeholder="For example: rice, water, salt, egg" data-i18n-placeholder="cook.placeholder" aria-describedby="ingredients-error" required></textarea>
+          <p id="ingredients-error" class="error" role="alert" hidden></p>
 
           <label for="servings" data-i18n="cook.servings">How many servings?</label>
           <div class="stepper">

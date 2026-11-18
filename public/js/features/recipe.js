@@ -6,6 +6,8 @@ import { el } from "../ui.js";
 import { icon } from "../icons.js";
 import { copyText } from "../clipboard.js";
 import { favButton } from "../recipeView.js";
+import { namesIn } from "../names.js";
+import { isIngredientList } from "../ingredients.js";
 import { t, tOr } from "../i18n.js";
 
 // textContent (not innerHTML) so nothing the AI writes can run as code.
@@ -94,6 +96,15 @@ export function initRecipeForm({ getPrefs }) {
   document.getElementById("minus").addEventListener("click", () => { chosen = true; setServings(Number(servingsEl.value) - 1); });
   document.getElementById("plus").addEventListener("click", () => { chosen = true; setServings(Number(servingsEl.value) + 1); });
   servingsEl.addEventListener("input", () => { chosen = true; });
+  // The "only ingredients, please" message sits right under the box, so it is seen on a small screen too.
+  const problemEl = document.getElementById("ingredients-error");
+  const ingredientsProblem = (message) => {
+    problemEl.hidden = !message;
+    problemEl.textContent = message;
+    if (message) ingredientsEl.setAttribute("aria-invalid", "true");
+    else ingredientsEl.removeAttribute("aria-invalid");
+  };
+  ingredientsEl.addEventListener("input", () => ingredientsProblem(""));
 
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
@@ -103,6 +114,20 @@ export function initRecipeForm({ getPrefs }) {
       setStatus(t("cook.answerFirst"), true);
       return;
     }
+
+    // Only ingredients: anything else is turned back here, before a request is made.
+    if (!isIngredientList(ingredientsEl.value)) {
+      ingredientsProblem(t("cook.invalid"));
+      ingredientsEl.focus();
+      return;
+    }
+    const names = namesIn(ingredientsEl.value);
+    if (names.length) {
+      ingredientsProblem(t("cook.notFood", { x: names.slice(0, 5).join(", ") }));
+      ingredientsEl.focus();
+      return;
+    }
+    ingredientsProblem("");
 
     setBusy(goBtn, true, t("cook.go"));
     setStatus(t("cook.thinking"));
@@ -120,7 +145,10 @@ export function initRecipeForm({ getPrefs }) {
       showRecipe(recipe);
       setStatus("");
     } catch (err) {
-      setStatus(err.message, true);
+      if (err.code === "bad_ingredients" || err.code === "not_food") {
+        ingredientsProblem(err.message);
+        setStatus("");
+      } else setStatus(err.message, true);
     } finally {
       setBusy(goBtn, false, t("cook.go"));
     }

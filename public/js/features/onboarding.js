@@ -2,7 +2,7 @@
 //   1. Which state are you from?
 //   2. (only if we have a follow-up for that state) Which part of it?
 //   3. Vegetarian or non-vegetarian?
-//   4. How many people do you usually cook for?
+//   4. How many people do you usually cook for? (not asked once family members are added in My family)
 // One question per screen, big buttons.
 
 import { STATES, OTHER_STATE, DIETS, subRegionsOf } from "../data/regions.js";
@@ -10,7 +10,8 @@ import { DEFAULT_PEOPLE, MIN_PEOPLE, MAX_PEOPLE, isValidPeople } from "../prefs.
 import { el } from "../ui.js";
 import { t, tOr } from "../i18n.js";
 
-export function startOnboarding({ container, initial = null, onDone, onCancel }) {
+// skipPeople: the family profiles already say how many people are cooked for, so that question is not asked.
+export function startOnboarding({ container, initial = null, skipPeople = false, onDone, onCancel }) {
   const answers = {
     state: initial?.state ?? null,
     region: initial?.region ?? null,
@@ -21,8 +22,10 @@ export function startOnboarding({ container, initial = null, onDone, onCancel })
   let nextBtn;
 
   // The "which part?" screen only appears for states that have sub-regions.
-  const stepsForNow = () =>
-    subRegionsOf(answers.state).length ? ["state", "region", "diet", "people"] : ["state", "diet", "people"];
+  const stepsForNow = () => {
+    const steps = subRegionsOf(answers.state).length ? ["state", "region", "diet", "people"] : ["state", "diet", "people"];
+    return skipPeople ? steps.filter((s) => s !== "people") : steps;
+  };
 
   const isAnswered = (s) =>
     s === "people" ? isValidPeople(answers.people) : Boolean(s === "state" ? answers.state : s === "region" ? answers.region : answers.diet);

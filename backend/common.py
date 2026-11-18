@@ -9,8 +9,9 @@ def reply(data: dict, status: int = 200) -> JSONResponse:
     return JSONResponse(data, status_code=status, headers={"Cache-Control": "no-store"})
 
 
-def error(message: str, status: int) -> JSONResponse:
-    return reply({"error": message}, status)
+def error(message: str, status: int, code: str | None = None, **extra) -> JSONResponse:
+    """code: a short name the app uses to show the message in the person's own language."""
+    return reply({"error": message, **({"code": code} if code else {}), **extra}, status)
 
 
 def to_int(value) -> int | None:
